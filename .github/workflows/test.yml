@@ -10,15 +10,13 @@ jobs:
   build: # make sure build/ci work properly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: |
-          npm install
-      - run: |
-          npm run all
-  test: # make sure the action works on a clean machine without building
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: ./
+      - uses: actions/checkout@v3
+      - name: Set Node.js 18.x
+        uses: actions/setup-node@v3.5.1
         with:
-          milliseconds: 1000
+          node-version: 18.x
+          cache: pnpm
+      - uses: pnpm/action-setup@v2
+      - run: |
+          pnpm install --frozen-lockfile
+          pnpm all
