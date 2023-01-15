@@ -16,6 +16,7 @@ async function run(): Promise<void> {
     }
     const name: string = core.getInput('name')
     const token: string = core.getInput('github_token')
+    core.info(`Check contributions by ${name}...`)
     const data = extractData(list, name)
     if (Object.keys(data).length === 0) {
       core.setFailed(
