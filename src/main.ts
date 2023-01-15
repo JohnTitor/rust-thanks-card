@@ -44,12 +44,12 @@ async function embedURL(token: string, url: string): Promise<void> {
     const octokit = github.getOctokit(token)
     const {owner, repo} = github.context.repo
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data: any = await octokit.rest.repos.getContent({
+    const res: any = await octokit.rest.repos.getContent({
       owner,
       repo,
       path: 'README.md'
     })
-    const content = Buffer.from(data.content, 'base64').toString()
+    const content = Buffer.from(res.data.content, 'base64').toString()
     const re = new RegExp(`(${MARK.START})[\\s\\S]*(${MARK.END})`)
     if (!re.test(content)) {
       core.error('Failed to embed URL, possibly the marker is not found')
@@ -62,7 +62,7 @@ async function embedURL(token: string, url: string): Promise<void> {
       path: 'README.md',
       message: 'Update README.md',
       content: Buffer.from(newReadme).toString('base64'),
-      sha: data.sha
+      sha: res.data.sha
     })
     return
   } catch (error) {
