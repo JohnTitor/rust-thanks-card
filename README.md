@@ -1,6 +1,26 @@
 # Rust Thanks Card
 
-Generate a card/badge from Rust Thanks.
+Generate a card/badge from [Rust Thanks](https://thanks.rust-lang.org/).
+
+## Workflow config
+
+```yaml
+name: Rust Thanks Card
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-card:
+    name: Rust Thanks Card
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: JohnTitor/rust-thanks-card@main
+        with:
+          name: 'Yuki Okushi' # A name on Thanks
+          image_url: 'https://avatars.githubusercontent.com/u/25030997?v=4' # An image URL to be used in a SVG
+          type: 'badge' # badge or svg
+```
 
 ## Examples
 
