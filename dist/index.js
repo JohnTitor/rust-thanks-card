@@ -61,10 +61,6 @@ function run() {
             const name = core.getInput('name');
             const token = core.getInput('github_token');
             const data = extractData(list, name);
-            if (Object.keys(data).length === 0) {
-                core.setFailed(`Failed to extract data by ${name}, possibly your name is not in the list`);
-                return;
-            }
             const rank = data.get('rank');
             const contributions = data.get('contributions');
             if (rank === undefined || contributions === undefined) {
