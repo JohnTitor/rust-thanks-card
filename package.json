@@ -25,7 +25,8 @@
   "author": "Yuki Okushi",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.10.0"
+    "@actions/core": "^1.10.0",
+    "axios": "^1.2.2"
   },
   "devDependencies": {
     "@jest/globals": "^29.3.1",
