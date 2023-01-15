@@ -42,13 +42,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getList = exports.extractData = void 0;
 const core = __importStar(__nccwpck_require__(8686));
 const axios_1 = __importDefault(__nccwpck_require__(8243));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const res = yield axios_1.default.get('https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html');
-            core.info(res.data);
+            const list = yield getList();
+            if (list === '') {
+                core.setFailed('Failed to get the list from Rust Thanks');
+                return;
+            }
+            const name = core.getInput('name');
+            const data = extractData(list, name);
+            if (Object.keys(data).length === 0) {
+                core.setFailed('Failed to extract data, possibly your name is not in the list');
+                return;
+            }
         }
         catch (error) {
             if (error instanceof Error)
@@ -56,6 +66,41 @@ function run() {
         }
     });
 }
+function extractData(html, grepName) {
+    const data = new Map();
+    const lns = html.split('\n');
+    const nameIdx = lns.findIndex((ln) => ln.includes(grepName));
+    if (nameIdx < 0) {
+        core.setFailed(`${grepName} not found`);
+    }
+    const re = /<td class="bn">(.+)<\/td>/;
+    const nameArr = re.exec(lns[nameIdx].trim());
+    const rankArr = re.exec(lns[nameIdx - 1].trim());
+    const contributionsArr = re.exec(lns[nameIdx + 1].trim());
+    if (nameArr === null || rankArr === null || contributionsArr === null) {
+        core.setFailed('Failed to parse');
+        return data;
+    }
+    data.set('name', nameArr[1]);
+    data.set('rank', rankArr[1]);
+    data.set('contributions', contributionsArr[1]);
+    return data;
+}
+exports.extractData = extractData;
+function getList() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const res = yield axios_1.default.get('https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html');
+            return res.data;
+        }
+        catch (error) {
+            if (error instanceof Error)
+                core.setFailed(error.message);
+        }
+        return '';
+    });
+}
+exports.getList = getList;
 run();
 
 

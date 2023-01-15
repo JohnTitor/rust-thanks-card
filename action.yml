@@ -1,11 +1,10 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'rust-thanks-action'
+description: 'Generate a card from Rust Thanks'
+author: 'Yuki Okushi'
 inputs:
-  milliseconds: # change this
+  name:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'A name listed in Rust Thanks'
 runs:
   using: 'node16'
   main: 'dist/index.js'
