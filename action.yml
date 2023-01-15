@@ -5,6 +5,14 @@ inputs:
   name:
     required: true
     description: 'A name listed in Rust Thanks'
+  type:
+    required: false
+    description: 'Whether a card or badge'
+    default: 'badge'
+  image_url:
+    required: false
+    description: 'An image URL to be used in a card'
+    default: ''
 runs:
   using: 'node16'
   main: 'dist/index.js'

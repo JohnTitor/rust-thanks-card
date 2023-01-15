@@ -42,7 +42,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getList = exports.extractData = void 0;
+exports.genSVGURL = exports.genBadgeURL = exports.extractData = void 0;
 const core = __importStar(__nccwpck_require__(8686));
 const axios_1 = __importDefault(__nccwpck_require__(8243));
 function run() {
@@ -59,6 +59,22 @@ function run() {
                 core.setFailed('Failed to extract data, possibly your name is not in the list');
                 return;
             }
+            const rank = data.get('rank');
+            const contributions = data.get('contributions');
+            if (rank === undefined || contributions === undefined) {
+                core.setFailed('Failed to get rank or contributions');
+                return;
+            }
+            const type = core.getInput('type');
+            if (type === 'svg') {
+                const imageURL = core.getInput('image_url');
+                const url = genSVGURL(rank.toString(), contributions.toString(), imageURL);
+                core.setOutput('badge-svg', url);
+            }
+            else {
+                const url = genBadgeURL(rank.toString(), contributions.toString());
+                core.setOutput('badge-url', url);
+            }
         }
         catch (error) {
             if (error instanceof Error)
@@ -74,19 +90,62 @@ function extractData(html, grepName) {
         core.setFailed(`${grepName} not found`);
     }
     const re = /<td class="bn">(.+)<\/td>/;
-    const nameArr = re.exec(lns[nameIdx].trim());
-    const rankArr = re.exec(lns[nameIdx - 1].trim());
-    const contributionsArr = re.exec(lns[nameIdx + 1].trim());
-    if (nameArr === null || rankArr === null || contributionsArr === null) {
+    const nameLn = re.exec(lns[nameIdx]);
+    const rankLn = re.exec(lns[nameIdx - 1]);
+    const contributionsLn = re.exec(lns[nameIdx + 1]);
+    if (nameLn === null || rankLn === null || contributionsLn === null) {
         core.setFailed('Failed to parse');
         return data;
     }
-    data.set('name', nameArr[1]);
-    data.set('rank', rankArr[1]);
-    data.set('contributions', contributionsArr[1]);
+    data.set('name', nameLn[1]);
+    data.set('rank', rankLn[1]);
+    data.set('contributions', contributionsLn[1]);
     return data;
 }
 exports.extractData = extractData;
+function genBadgeURL(rank, contributions) {
+    if (rank.endsWith('1')) {
+        rank = `${rank}st`;
+    }
+    else if (rank.endsWith('2')) {
+        ;
+        `${rank}nd`;
+    }
+    else if (rank.endsWith('3')) {
+        ;
+        `${rank}rd`;
+    }
+    else {
+        ;
+        `${rank}th`;
+    }
+    const url = `https://img.shields.io/badge/Rust%20Contributions-${contributions}%20contibutions,%20${rank}-orange?logo=rust`;
+    return url;
+}
+exports.genBadgeURL = genBadgeURL;
+function genSVGURL(rank, contributions, imageURL) {
+    if (rank.endsWith('1')) {
+        rank = `${rank}st`;
+    }
+    else if (rank.endsWith('2')) {
+        ;
+        `${rank}nd`;
+    }
+    else if (rank.endsWith('3')) {
+        ;
+        `${rank}rd`;
+    }
+    else {
+        ;
+        `${rank}th`;
+    }
+    if (imageURL !== '') {
+        imageURL = `&image=${imageURL}`;
+    }
+    const url = `https://cardivo-woad.vercel.app/api?name=Rust%20Contribution%20Stats%0A&description=Contributions%F0%9F%93%9D:%20${contributions}%20Rank%F0%9F%8F%86:%20${rank}${imageURL}&backgroundColor=%23ecf0f1&disableAnimation=true`;
+    return url;
+}
+exports.genSVGURL = genSVGURL;
 function getList() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -100,7 +159,6 @@ function getList() {
         return '';
     });
 }
-exports.getList = getList;
 run();
 
 
