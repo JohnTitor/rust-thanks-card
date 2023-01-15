@@ -1,5 +1,11 @@
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 import axios from 'axios'
+
+const MARK = {
+  START: '<!--START_SECTION:rust-thanks-card-->',
+  END: '<!--END_SECTION:rust-thanks-card-->'
+}
 
 async function run(): Promise<void> {
   try {
@@ -9,6 +15,7 @@ async function run(): Promise<void> {
       return
     }
     const name: string = core.getInput('name')
+    const token: string = core.getInput('github_token')
     const data = extractData(list, name)
     if (Object.keys(data).length === 0) {
       core.setFailed(
@@ -23,16 +30,50 @@ async function run(): Promise<void> {
       return
     }
     const type = core.getInput('type')
+    let url = ''
     if (type === 'svg') {
       const imageURL = core.getInput('image_url')
-      const url = genSVGURL(rank.toString(), contributions.toString(), imageURL)
-      core.setOutput('badge-svg', url)
+      url = genSVGURL(rank.toString(), contributions.toString(), imageURL)
+      core.info(`SVG URL: ${url}`)
     } else {
-      const url = genBadgeURL(rank.toString(), contributions.toString())
-      core.setOutput('badge-url', url)
+      url = genBadgeURL(rank.toString(), contributions.toString())
+      core.info(`badge URL: ${url}`)
     }
+    await embedURL(token, url)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
+  }
+}
+
+async function embedURL(token: string, url: string): Promise<void> {
+  try {
+    const octokit = github.getOctokit(token)
+    const {owner, repo} = github.context.repo
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path: 'README.md'
+    })
+    const content = Buffer.from(data.content, 'base64').toString()
+    const re = new RegExp(`(${MARK.START})[\\s\\S]*(${MARK.END})`)
+    if (!re.test(content)) {
+      core.error('Failed to embed URL, possibly the marker is not found')
+      return
+    }
+    const newReadme = content.replace(re, `$1\n<img src=${url}>\n$2`)
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      path: 'README.md',
+      message: 'Update README.md',
+      content: Buffer.from(newReadme).toString('base64'),
+      sha: data.sha
+    })
+    return
+  } catch (error) {
+    if (error instanceof Error) core.setFailed(error.message)
+    return
   }
 }
 

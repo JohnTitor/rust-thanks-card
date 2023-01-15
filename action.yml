@@ -2,6 +2,9 @@ name: 'rust-thanks-action'
 description: 'Generate a card from Rust Thanks'
 author: 'Yuki Okushi'
 inputs:
+  github_token:
+    required: false
+    default: ${{ github.token }}
   name:
     required: true
     description: 'A name listed in Rust Thanks'
