@@ -27,10 +27,9 @@ jobs:
         uses: actions/setup-node@v3.5.1
         with:
           node-version: 18.x
-          cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: pnpm/action-setup@v2
+      - run: pnpm install --frozen-lockfile
 
       - name: Rebuild the dist/ directory
         run: |
