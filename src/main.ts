@@ -55,7 +55,7 @@ async function embedURL(token: string, url: string): Promise<void> {
       core.error('Failed to embed URL, possibly the marker is not found')
       return
     }
-    const newReadme = content.replace(re, `$1\n<img src=${url}>\n$2`)
+    const newReadme = content.replace(re, `$1\n<img src="${url}">\n$2`)
     await octokit.rest.repos.createOrUpdateFileContents({
       owner,
       repo,

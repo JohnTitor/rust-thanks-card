@@ -103,7 +103,7 @@ function embedURL(token, url) {
                 core.error('Failed to embed URL, possibly the marker is not found');
                 return;
             }
-            const newReadme = content.replace(re, `$1\n<img src=${url}>\n$2`);
+            const newReadme = content.replace(re, `$1\n<img src="${url}">\n$2`);
             yield octokit.rest.repos.createOrUpdateFileContents({
                 owner,
                 repo,
