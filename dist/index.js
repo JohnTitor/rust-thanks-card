@@ -143,45 +143,41 @@ function extractData(html, grepName) {
 }
 exports.extractData = extractData;
 function genBadgeURL(rank, contributions) {
+    let rankStr = rank;
     if (rank.endsWith('1')) {
-        rank = `${rank}st`;
+        rankStr = `${rank}st`;
     }
     else if (rank.endsWith('2')) {
-        ;
-        `${rank}nd`;
+        rankStr = `${rank}nd`;
     }
     else if (rank.endsWith('3')) {
-        ;
-        `${rank}rd`;
+        rankStr = `${rank}rd`;
     }
     else {
-        ;
-        `${rank}th`;
+        rankStr = `${rank}th`;
     }
-    const url = `https://img.shields.io/badge/Rust%20Contributions-${contributions}%20contibutions,%20${rank}-orange?logo=rust`;
+    const url = `https://img.shields.io/badge/Rust%20Contributions-${contributions}%20contibutions,%20${rankStr}-orange?logo=rust`;
     return url;
 }
 exports.genBadgeURL = genBadgeURL;
 function genSVGURL(rank, contributions, imageURL) {
+    let rankStr = rank;
     if (rank.endsWith('1')) {
-        rank = `${rank}st`;
+        rankStr = `${rank}st`;
     }
     else if (rank.endsWith('2')) {
-        ;
-        `${rank}nd`;
+        rankStr = `${rank}nd`;
     }
     else if (rank.endsWith('3')) {
-        ;
-        `${rank}rd`;
+        rankStr = `${rank}rd`;
     }
     else {
-        ;
-        `${rank}th`;
+        rankStr = `${rank}th`;
     }
     if (imageURL !== '') {
         imageURL = `&image=${imageURL}`;
     }
-    const url = `https://cardivo-woad.vercel.app/api?name=Rust%20Contribution%20Stats%0A&description=Contributions%F0%9F%93%9D:%20${contributions}%20Rank%F0%9F%8F%86:%20${rank}${imageURL}&backgroundColor=%23ecf0f1&disableAnimation=true`;
+    const url = `https://cardivo-woad.vercel.app/api?name=Rust%20Contribution%20Stats%0A&description=Contributions%F0%9F%93%9D:%20${contributions}%20Rank%F0%9F%8F%86:%20${rankStr}${imageURL}&backgroundColor=%23ecf0f1&disableAnimation=true`;
     return url;
 }
 exports.genSVGURL = genSVGURL;
