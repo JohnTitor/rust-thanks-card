@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Set Node.js 18.x
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4.0.4
         with:
           node-version: 18.x
 
