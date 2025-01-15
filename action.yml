@@ -1,6 +1,9 @@
 name: 'rust-thanks-action'
 description: 'Generate a card from Rust Thanks'
 author: 'Yuki Okushi'
+branding:
+  icon: 'award'
+  color: 'green'
 inputs:
   github_token:
     required: false
