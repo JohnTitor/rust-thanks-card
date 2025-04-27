@@ -4,7 +4,7 @@
   "private": true,
   "description": "Generate a card from Rust Thanks",
   "main": "lib/main.js",
-  "packageManager": "pnpm@9.15.9",
+  "packageManager": "pnpm@10.9.0",
   "scripts": {
     "build": "tsc",
     "format": "prettier --write '**/*.ts'",
@@ -28,23 +28,26 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "axios": "^1.7.9"
+    "axios": "^1.9.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.18.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.25.1",
     "@jest/globals": "^29.7.0",
-    "@types/node": "^22.10.6",
-    "@typescript-eslint/parser": "^8.20.0",
+    "@types/node": "^22.15.2",
+    "@typescript-eslint/eslint-plugin": "^8.31.0",
+    "@typescript-eslint/parser": "^8.31.0",
     "@vercel/ncc": "^0.38.3",
-    "eslint": "^9.18.0",
+    "eslint": "^9.25.1",
     "eslint-plugin-github": "^6.0.0",
+    "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jest": "^28.11.0",
+    "eslint-plugin-prettier": "^5.2.6",
     "globals": "^16.0.0",
     "jest": "^29.7.0",
     "js-yaml": "^4.1.0",
     "prettier": "3.5.3",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.7.3"
+    "ts-jest": "^29.3.2",
+    "typescript": "^5.8.3"
   }
 }
