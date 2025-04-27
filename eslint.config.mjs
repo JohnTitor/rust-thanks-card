@@ -1,4 +1,3 @@
-import { fixupPluginRules } from '@eslint/compat'
 import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
@@ -31,7 +30,7 @@ export default [
   ),
   {
     plugins: {
-      import: fixupPluginRules(_import),
+      import: _import,
       jest,
       prettier,
       '@typescript-eslint': typescriptEslint
