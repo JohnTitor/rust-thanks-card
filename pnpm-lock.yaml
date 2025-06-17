@@ -53,7 +53,7 @@ importers:
         version: 28.14.0(@typescript-eslint/eslint-plugin@8.34.0(@typescript-eslint/parser@8.34.0(eslint@9.29.0)(typescript@5.8.3))(eslint@9.29.0)(typescript@5.8.3))(eslint@9.29.0)(jest@30.0.0(@types/node@22.15.32))(typescript@5.8.3)
       eslint-plugin-prettier:
         specifier: ^5.2.6
-        version: 5.4.1(eslint-config-prettier@10.1.2(eslint@9.29.0))(eslint@9.29.0)(prettier@3.5.3)
+        version: 5.5.0(eslint-config-prettier@10.1.2(eslint@9.29.0))(eslint@9.29.0)(prettier@3.5.3)
       globals:
         specifier: ^16.0.0
         version: 16.2.0
@@ -1336,8 +1336,8 @@ packages:
     resolution: {integrity: sha512-brcKcxGnISN2CcVhXJ/kEQlNa0MEfGRtwKtWA16SkqXHKitaKIMrfemJKLKX1YqDU5C/5JY3PvZXd5jEW04e0Q==}
     engines: {node: '>=5.0.0'}
 
-  eslint-plugin-prettier@5.4.1:
-    resolution: {integrity: sha512-9dF+KuU/Ilkq27A8idRP7N2DH8iUR6qXcjF3FR2wETY21PZdBrIjwCau8oboyGj9b7etWmTGEeM8e7oOed6ZWg==}
+  eslint-plugin-prettier@5.5.0:
+    resolution: {integrity: sha512-8qsOYwkkGrahrgoUv76NZi23koqXOGiiEzXMrT8Q7VcYaUISR+5MorIUxfWqYXN0fN/31WbSrxCxFkVQ43wwrA==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       '@types/eslint': '>=8.0.0'
@@ -2282,11 +2282,6 @@ packages:
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
-    hasBin: true
-
-  semver@7.7.1:
-    resolution: {integrity: sha512-hlq8tAfn0m/61p4BVRcPzIGr6LKiMwo4VM6dGi6pt4qcRkmNzTcWq6eCEjEh+qXjkMDvPlOFFSGwQjoEa6gyMA==}
-    engines: {node: '>=10'}
     hasBin: true
 
   semver@7.7.2:
@@ -4117,7 +4112,7 @@ snapshots:
       eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.34.0(eslint@9.29.0)(typescript@5.8.3))(eslint@9.29.0)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.29.0)
       eslint-plugin-no-only-tests: 3.3.0
-      eslint-plugin-prettier: 5.4.1(eslint-config-prettier@10.1.2(eslint@9.29.0))(eslint@9.29.0)(prettier@3.5.3)
+      eslint-plugin-prettier: 5.5.0(eslint-config-prettier@10.1.2(eslint@9.29.0))(eslint@9.29.0)(prettier@3.5.3)
       eslint-rule-documentation: 1.0.23
       globals: 16.2.0
       jsx-ast-utils: 3.3.5
@@ -4196,7 +4191,7 @@ snapshots:
 
   eslint-plugin-no-only-tests@3.3.0: {}
 
-  eslint-plugin-prettier@5.4.1(eslint-config-prettier@10.1.2(eslint@9.29.0))(eslint@9.29.0)(prettier@3.5.3):
+  eslint-plugin-prettier@5.5.0(eslint-config-prettier@10.1.2(eslint@9.29.0))(eslint@9.29.0)(prettier@3.5.3):
     dependencies:
       eslint: 9.29.0
       prettier: 3.5.3
@@ -5336,8 +5331,6 @@ snapshots:
       is-regex: 1.2.1
 
   semver@6.3.1: {}
-
-  semver@7.7.1: {}
 
   semver@7.7.2: {}
 
