@@ -46,7 +46,7 @@
     "globals": "^16.0.0",
     "jest": "^30.0.0",
     "js-yaml": "^4.1.0",
-    "prettier": "3.6.1",
+    "prettier": "3.6.2",
     "ts-jest": "^29.3.2",
     "typescript": "^5.8.3"
   }
