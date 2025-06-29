@@ -1,16 +1,23 @@
 import {extractData, genBadgeURL, genSVGURL} from '../src/main'
-import {expect, test} from '@jest/globals'
-import fs from 'fs'
-import path from 'path'
+import {expect, test} from 'vitest'
 
 test('extract data from HTML', () => {
-  const testHTMLPath = path.join(__dirname, 'test.html')
-  const testHTML = fs.readFileSync(testHTMLPath, 'utf8')
+  const testHTML = `
+  <table>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td class="bn"><a href="https://github.com/bors" rel="nofollow">bors</a></td>
+        <td class="bc">53863</td>
+      </tr>
+    </tbody>
+  </table>
+  `
   const data = extractData(testHTML, 'bors')
   console.log(data)
   expect(data.get('name')).toBe('bors')
   expect(data.get('rank')).toBe('1')
-  expect(data.get('contributions')).toBe('40782')
+  expect(data.get('contributions')).toBe('53863')
 })
 
 test('generate badge URL', () => {

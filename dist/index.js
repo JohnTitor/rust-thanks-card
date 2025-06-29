@@ -39,15 +39,6 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -57,100 +48,100 @@ exports.genBadgeURL = genBadgeURL;
 exports.genSVGURL = genSVGURL;
 const core = __importStar(__nccwpck_require__(9999));
 const github = __importStar(__nccwpck_require__(2819));
+const buffer_1 = __nccwpck_require__(181);
 const axios_1 = __importDefault(__nccwpck_require__(5029));
 const MARK = {
     START: '<!--START_SECTION:rust-thanks-card-->',
     END: '<!--END_SECTION:rust-thanks-card-->'
 };
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const list = yield getList();
-            if (list === '') {
-                core.setFailed('Failed to get the list from Rust Thanks');
-                return;
-            }
-            const name = core.getInput('name');
-            const token = core.getInput('github_token');
-            const data = extractData(list, name);
-            const rank = data.get('rank');
-            const contributions = data.get('contributions');
-            if (rank === undefined || contributions === undefined) {
-                core.setFailed('Failed to get rank or contributions');
-                return;
-            }
-            const type = core.getInput('type');
-            let url = '';
-            if (type === 'svg') {
-                const imageURL = core.getInput('image_url');
-                url = genSVGURL(rank.toString(), contributions.toString(), imageURL);
-                core.info(`SVG URL: ${url}`);
-            }
-            else {
-                url = genBadgeURL(rank.toString(), contributions.toString());
-                core.info(`badge URL: ${url}`);
-            }
-            yield embedURL(token, url);
+async function run() {
+    try {
+        const list = await getList();
+        if (list === '') {
+            core.setFailed('Failed to get the list from Rust Thanks');
+            return;
         }
-        catch (error) {
-            if (error instanceof Error)
-                core.setFailed(error.message);
+        const name = core.getInput('name');
+        const token = core.getInput('github_token');
+        const data = extractData(list, name);
+        const rank = data.get('rank');
+        const contributions = data.get('contributions');
+        if (rank === undefined || contributions === undefined) {
+            core.setFailed('Failed to get rank or contributions');
+            return;
         }
-    });
+        const type = core.getInput('type');
+        let url = '';
+        if (type === 'svg') {
+            const imageURL = core.getInput('image_url');
+            url = genSVGURL(rank.toString(), contributions.toString(), imageURL);
+            core.info(`SVG URL: ${url}`);
+        }
+        else {
+            url = genBadgeURL(rank.toString(), contributions.toString());
+            core.info(`badge URL: ${url}`);
+        }
+        await embedURL(token, url);
+    }
+    catch (error) {
+        if (error instanceof Error)
+            core.setFailed(error.message);
+    }
 }
-function embedURL(token, url) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const octokit = github.getOctokit(token);
-            const { owner, repo } = github.context.repo;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res = yield octokit.rest.repos.getContent({
-                owner,
-                repo,
-                path: 'README.md'
-            });
-            const content = Buffer.from(res.data.content, 'base64').toString();
-            const re = new RegExp(`(${MARK.START})[\\s\\S]*(${MARK.END})`);
-            if (!re.test(content)) {
-                core.error('Failed to embed URL, possibly the marker is not found');
-                return;
-            }
-            const newReadme = content.replace(re, `$1\n<img src="${url}">\n$2`);
-            yield octokit.rest.repos.createOrUpdateFileContents({
-                owner,
-                repo,
-                path: 'README.md',
-                message: 'Update README.md',
-                content: Buffer.from(newReadme).toString('base64'),
-                sha: res.data.sha
-            });
+async function embedURL(token, url) {
+    try {
+        const octokit = github.getOctokit(token);
+        const { owner, repo } = github.context.repo;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = await octokit.rest.repos.getContent({
+            owner,
+            repo,
+            path: 'README.md'
+        });
+        const content = buffer_1.Buffer.from(res.data.content, 'base64').toString();
+        const re = new RegExp(`(${MARK.START})[\\s\\S]*(${MARK.END})`);
+        if (!re.test(content)) {
+            core.error('Failed to embed URL, possibly the marker is not found');
             return;
         }
-        catch (error) {
-            if (error instanceof Error)
-                core.setFailed(error.message);
-            return;
-        }
-    });
+        const newReadme = content.replace(re, `$1\n<img src="${url}">\n$2`);
+        await octokit.rest.repos.createOrUpdateFileContents({
+            owner,
+            repo,
+            path: 'README.md',
+            message: 'Update README.md',
+            content: buffer_1.Buffer.from(newReadme).toString('base64'),
+            sha: res.data.sha
+        });
+        return;
+    }
+    catch (error) {
+        if (error instanceof Error)
+            core.setFailed(error.message);
+        return;
+    }
 }
 function extractData(html, grepName) {
     const data = new Map();
-    const lns = html.split('\n');
-    const nameIdx = lns.findIndex((ln) => ln.includes(grepName));
-    if (nameIdx < 0) {
-        core.setFailed(`${grepName} not found`);
-    }
-    const re = /<td class="bn">(.+)<\/td>/;
-    const nameLn = re.exec(lns[nameIdx]);
-    const rankLn = re.exec(lns[nameIdx - 1]);
-    const contributionsLn = re.exec(lns[nameIdx + 1]);
-    if (nameLn === null || rankLn === null || contributionsLn === null) {
-        core.setFailed('Failed to parse');
+    const rows = html.match(/<tr>(.*?)<\/tr>/gs);
+    if (!rows) {
+        core.setFailed('No rows found in HTML');
         return data;
     }
-    data.set('name', nameLn[1]);
-    data.set('rank', rankLn[1]);
-    data.set('contributions', contributionsLn[1]);
+    for (const row of rows) {
+        if (row.includes(`>${grepName}</a>`)) {
+            const rankMatch = row.match(/<td>(\d+)<\/td>/);
+            const nameMatch = row.match(/<a .*?>(.*?)<\/a>/);
+            const contributionsMatch = row.match(/<td class="bc">(\d+)<\/td>/);
+            if (rankMatch && nameMatch && contributionsMatch) {
+                data.set('rank', rankMatch[1]);
+                data.set('name', nameMatch[1]);
+                data.set('contributions', contributionsMatch[1]);
+                return data;
+            }
+        }
+    }
+    core.setFailed(`${grepName} not found`);
     return data;
 }
 function genBadgeURL(rank, contributions) {
@@ -190,18 +181,16 @@ function genSVGURL(rank, contributions, imageURL) {
     const url = `https://cardivo-woad.vercel.app/api?name=Rust%20Contribution%20Stats%0A&description=Contributions%F0%9F%93%9D:%20${contributions}%20Rank%F0%9F%8F%86:%20${rankStr}${imageURL}&backgroundColor=%23ecf0f1&disableAnimation=true`;
     return url;
 }
-function getList() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const res = yield axios_1.default.get('https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html');
-            return res.data;
-        }
-        catch (error) {
-            if (error instanceof Error)
-                core.setFailed(error.message);
-        }
-        return '';
-    });
+async function getList() {
+    try {
+        const res = await axios_1.default.get('https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html');
+        return res.data;
+    }
+    catch (error) {
+        if (error instanceof Error)
+            core.setFailed(error.message);
+    }
+    return '';
 }
 run();
 

@@ -8,6 +8,7 @@ inputs:
   github_token:
     required: false
     default: ${{ github.token }}
+    description: 'GitHub token'
   name:
     required: true
     description: 'A name listed in Rust Thanks'
