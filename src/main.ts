@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import {Buffer} from 'buffer'
 import axios from 'axios'
 
 const MARK = {
@@ -76,22 +77,28 @@ export function extractData(
   grepName: string
 ): Map<string, string> {
   const data = new Map<string, string>()
-  const lns = html.split('\n')
-  const nameIdx = lns.findIndex((ln: string) => ln.includes(grepName))
-  if (nameIdx < 0) {
-    core.setFailed(`${grepName} not found`)
-  }
-  const re = /<td class="bn">(.+)<\/td>/
-  const nameLn = re.exec(lns[nameIdx])
-  const rankLn = re.exec(lns[nameIdx - 1])
-  const contributionsLn = re.exec(lns[nameIdx + 1])
-  if (nameLn === null || rankLn === null || contributionsLn === null) {
-    core.setFailed('Failed to parse')
+  const rows = html.match(/<tr>(.*?)<\/tr>/gs)
+  if (!rows) {
+    core.setFailed('No rows found in HTML')
     return data
   }
-  data.set('name', nameLn[1])
-  data.set('rank', rankLn[1])
-  data.set('contributions', contributionsLn[1])
+
+  for (const row of rows) {
+    if (row.includes(`>${grepName}</a>`)) {
+      const rankMatch = row.match(/<td>(\d+)<\/td>/)
+      const nameMatch = row.match(/<a .*?>(.*?)<\/a>/)
+      const contributionsMatch = row.match(/<td class="bc">(\d+)<\/td>/)
+
+      if (rankMatch && nameMatch && contributionsMatch) {
+        data.set('rank', rankMatch[1])
+        data.set('name', nameMatch[1])
+        data.set('contributions', contributionsMatch[1])
+        return data
+      }
+    }
+  }
+
+  core.setFailed(`${grepName} not found`)
   return data
 }
 
