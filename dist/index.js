@@ -6,42 +6,67 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding =
+	(this && this.__createBinding) ||
+	(Object.create
+		? function (o, m, k, k2) {
+				if (k2 === undefined) k2 = k;
+				var desc = Object.getOwnPropertyDescriptor(m, k);
+				if (
+					!desc ||
+					("get" in desc ? !m.__esModule : desc.writable || desc.configurable)
+				) {
+					desc = {
+						enumerable: true,
+						get: function () {
+							return m[k];
+						},
+					};
+				}
+				Object.defineProperty(o, k2, desc);
+			}
+		: function (o, m, k, k2) {
+				if (k2 === undefined) k2 = k;
+				o[k2] = m[k];
+			});
+var __setModuleDefault =
+	(this && this.__setModuleDefault) ||
+	(Object.create
+		? function (o, v) {
+				Object.defineProperty(o, "default", { enumerable: true, value: v });
+			}
+		: function (o, v) {
+				o["default"] = v;
+			});
+var __importStar =
+	(this && this.__importStar) ||
+	(function () {
+		var ownKeys = function (o) {
+			ownKeys =
+				Object.getOwnPropertyNames ||
+				function (o) {
+					var ar = [];
+					for (var k in o)
+						if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+					return ar;
+				};
+			return ownKeys(o);
+		};
+		return function (mod) {
+			if (mod && mod.__esModule) return mod;
+			var result = {};
+			if (mod != null)
+				for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+					if (k[i] !== "default") __createBinding(result, mod, k[i]);
+			__setModuleDefault(result, mod);
+			return result;
+		};
+	})();
+var __importDefault =
+	(this && this.__importDefault) ||
+	function (mod) {
+		return mod && mod.__esModule ? mod : { default: mod };
+	};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.extractData = extractData;
 exports.genBadgeURL = genBadgeURL;
@@ -51,146 +76,135 @@ const github = __importStar(__nccwpck_require__(5380));
 const buffer_1 = __nccwpck_require__(181);
 const axios_1 = __importDefault(__nccwpck_require__(5435));
 const MARK = {
-    START: '<!--START_SECTION:rust-thanks-card-->',
-    END: '<!--END_SECTION:rust-thanks-card-->'
+	START: "<!--START_SECTION:rust-thanks-card-->",
+	END: "<!--END_SECTION:rust-thanks-card-->",
 };
 async function run() {
-    try {
-        const list = await getList();
-        if (list === '') {
-            core.setFailed('Failed to get the list from Rust Thanks');
-            return;
-        }
-        const name = core.getInput('name');
-        const token = core.getInput('github_token');
-        const data = extractData(list, name);
-        const rank = data.get('rank');
-        const contributions = data.get('contributions');
-        if (rank === undefined || contributions === undefined) {
-            core.setFailed('Failed to get rank or contributions');
-            return;
-        }
-        const type = core.getInput('type');
-        let url = '';
-        if (type === 'svg') {
-            const imageURL = core.getInput('image_url');
-            url = genSVGURL(rank.toString(), contributions.toString(), imageURL);
-            core.info(`SVG URL: ${url}`);
-        }
-        else {
-            url = genBadgeURL(rank.toString(), contributions.toString());
-            core.info(`badge URL: ${url}`);
-        }
-        await embedURL(token, url);
-    }
-    catch (error) {
-        if (error instanceof Error)
-            core.setFailed(error.message);
-    }
+	try {
+		const list = await getList();
+		if (list === "") {
+			core.setFailed("Failed to get the list from Rust Thanks");
+			return;
+		}
+		const name = core.getInput("name");
+		const token = core.getInput("github_token");
+		const data = extractData(list, name);
+		const rank = data.get("rank");
+		const contributions = data.get("contributions");
+		if (rank === undefined || contributions === undefined) {
+			core.setFailed("Failed to get rank or contributions");
+			return;
+		}
+		const type = core.getInput("type");
+		let url = "";
+		if (type === "svg") {
+			const imageURL = core.getInput("image_url");
+			url = genSVGURL(rank.toString(), contributions.toString(), imageURL);
+			core.info(`SVG URL: ${url}`);
+		} else {
+			url = genBadgeURL(rank.toString(), contributions.toString());
+			core.info(`badge URL: ${url}`);
+		}
+		await embedURL(token, url);
+	} catch (error) {
+		if (error instanceof Error) core.setFailed(error.message);
+	}
 }
 async function embedURL(token, url) {
-    try {
-        const octokit = github.getOctokit(token);
-        const { owner, repo } = github.context.repo;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res = await octokit.rest.repos.getContent({
-            owner,
-            repo,
-            path: 'README.md'
-        });
-        const content = buffer_1.Buffer.from(res.data.content, 'base64').toString();
-        const re = new RegExp(`(${MARK.START})[\\s\\S]*(${MARK.END})`);
-        if (!re.test(content)) {
-            core.error('Failed to embed URL, possibly the marker is not found');
-            return;
-        }
-        const newReadme = content.replace(re, `$1\n<img src="${url}">\n$2`);
-        await octokit.rest.repos.createOrUpdateFileContents({
-            owner,
-            repo,
-            path: 'README.md',
-            message: 'Update README.md',
-            content: buffer_1.Buffer.from(newReadme).toString('base64'),
-            sha: res.data.sha
-        });
-        return;
-    }
-    catch (error) {
-        if (error instanceof Error)
-            core.setFailed(error.message);
-        return;
-    }
+	try {
+		const octokit = github.getOctokit(token);
+		const { owner, repo } = github.context.repo;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const res = await octokit.rest.repos.getContent({
+			owner,
+			repo,
+			path: "README.md",
+		});
+		const content = buffer_1.Buffer.from(res.data.content, "base64").toString();
+		const re = new RegExp(`(${MARK.START})[\\s\\S]*(${MARK.END})`);
+		if (!re.test(content)) {
+			core.error("Failed to embed URL, possibly the marker is not found");
+			return;
+		}
+		const newReadme = content.replace(re, `$1\n<img src="${url}">\n$2`);
+		await octokit.rest.repos.createOrUpdateFileContents({
+			owner,
+			repo,
+			path: "README.md",
+			message: "Update README.md",
+			content: buffer_1.Buffer.from(newReadme).toString("base64"),
+			sha: res.data.sha,
+		});
+		return;
+	} catch (error) {
+		if (error instanceof Error) core.setFailed(error.message);
+		return;
+	}
 }
 function extractData(html, grepName) {
-    const data = new Map();
-    const rows = html.match(/<tr>(.*?)<\/tr>/gs);
-    if (!rows) {
-        core.setFailed('No rows found in HTML');
-        return data;
-    }
-    for (const row of rows) {
-        if (row.includes(`>${grepName}</a>`)) {
-            const rankMatch = row.match(/<td>(\d+)<\/td>/);
-            const nameMatch = row.match(/<a .*?>(.*?)<\/a>/);
-            const contributionsMatch = row.match(/<td class="bc">(\d+)<\/td>/);
-            if (rankMatch && nameMatch && contributionsMatch) {
-                data.set('rank', rankMatch[1]);
-                data.set('name', nameMatch[1]);
-                data.set('contributions', contributionsMatch[1]);
-                return data;
-            }
-        }
-    }
-    core.setFailed(`${grepName} not found`);
-    return data;
+	const data = new Map();
+	const rows = html.match(/<tr>(.*?)<\/tr>/gs);
+	if (!rows) {
+		core.setFailed("No rows found in HTML");
+		return data;
+	}
+	for (const row of rows) {
+		if (row.includes(`>${grepName}</a>`)) {
+			const rankMatch = row.match(/<td>(\d+)<\/td>/);
+			const nameMatch = row.match(/<a .*?>(.*?)<\/a>/);
+			const contributionsMatch = row.match(/<td class="bc">(\d+)<\/td>/);
+			if (rankMatch && nameMatch && contributionsMatch) {
+				data.set("rank", rankMatch[1]);
+				data.set("name", nameMatch[1]);
+				data.set("contributions", contributionsMatch[1]);
+				return data;
+			}
+		}
+	}
+	core.setFailed(`${grepName} not found`);
+	return data;
 }
 function genBadgeURL(rank, contributions) {
-    let rankStr = rank;
-    if (rank.endsWith('1')) {
-        rankStr = `${rank}st`;
-    }
-    else if (rank.endsWith('2')) {
-        rankStr = `${rank}nd`;
-    }
-    else if (rank.endsWith('3')) {
-        rankStr = `${rank}rd`;
-    }
-    else {
-        rankStr = `${rank}th`;
-    }
-    const url = `https://img.shields.io/badge/Rust%20Contributions-${contributions}%20contibutions,%20${rankStr}-orange?logo=rust`;
-    return url;
+	let rankStr = rank;
+	if (rank.endsWith("1")) {
+		rankStr = `${rank}st`;
+	} else if (rank.endsWith("2")) {
+		rankStr = `${rank}nd`;
+	} else if (rank.endsWith("3")) {
+		rankStr = `${rank}rd`;
+	} else {
+		rankStr = `${rank}th`;
+	}
+	const url = `https://img.shields.io/badge/Rust%20Contributions-${contributions}%20contibutions,%20${rankStr}-orange?logo=rust`;
+	return url;
 }
 function genSVGURL(rank, contributions, imageURL) {
-    let rankStr = rank;
-    if (rank.endsWith('1')) {
-        rankStr = `${rank}st`;
-    }
-    else if (rank.endsWith('2')) {
-        rankStr = `${rank}nd`;
-    }
-    else if (rank.endsWith('3')) {
-        rankStr = `${rank}rd`;
-    }
-    else {
-        rankStr = `${rank}th`;
-    }
-    if (imageURL !== '') {
-        imageURL = `&image=${imageURL}`;
-    }
-    const url = `https://cardivo-woad.vercel.app/api?name=Rust%20Contribution%20Stats%0A&description=Contributions%F0%9F%93%9D:%20${contributions}%20Rank%F0%9F%8F%86:%20${rankStr}${imageURL}&backgroundColor=%23ecf0f1&disableAnimation=true`;
-    return url;
+	let rankStr = rank;
+	if (rank.endsWith("1")) {
+		rankStr = `${rank}st`;
+	} else if (rank.endsWith("2")) {
+		rankStr = `${rank}nd`;
+	} else if (rank.endsWith("3")) {
+		rankStr = `${rank}rd`;
+	} else {
+		rankStr = `${rank}th`;
+	}
+	if (imageURL !== "") {
+		imageURL = `&image=${imageURL}`;
+	}
+	const url = `https://cardivo-woad.vercel.app/api?name=Rust%20Contribution%20Stats%0A&description=Contributions%F0%9F%93%9D:%20${contributions}%20Rank%F0%9F%8F%86:%20${rankStr}${imageURL}&backgroundColor=%23ecf0f1&disableAnimation=true`;
+	return url;
 }
 async function getList() {
-    try {
-        const res = await axios_1.default.get('https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html');
-        return res.data;
-    }
-    catch (error) {
-        if (error instanceof Error)
-            core.setFailed(error.message);
-    }
-    return '';
+	try {
+		const res = await axios_1.default.get(
+			"https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html",
+		);
+		return res.data;
+	} catch (error) {
+		if (error instanceof Error) core.setFailed(error.message);
+	}
+	return "";
 }
 run();
 
@@ -8882,7 +8896,7 @@ exports.colors = [6, 2, 3, 4, 5, 1];
 try {
 	// Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
 	// eslint-disable-next-line import/no-extraneous-dependencies
-	const supportsColor = __nccwpck_require__(1953);
+	const supportsColor = __nccwpck_require__(5545);
 
 	if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
 		exports.colors = [
@@ -11281,22 +11295,6 @@ module.exports = $gOPD;
 
 /***/ }),
 
-/***/ 1330:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = (flag, argv = process.argv) => {
-	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
-	const position = argv.indexOf(prefix + flag);
-	const terminatorPosition = argv.indexOf('--');
-	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
-};
-
-
-/***/ }),
-
 /***/ 9718:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -12054,149 +12052,6 @@ function getEnv(key) {
 }
 
 exports.getProxyForUrl = getProxyForUrl;
-
-
-/***/ }),
-
-/***/ 1953:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const os = __nccwpck_require__(857);
-const tty = __nccwpck_require__(2018);
-const hasFlag = __nccwpck_require__(1330);
-
-const {env} = process;
-
-let forceColor;
-if (hasFlag('no-color') ||
-	hasFlag('no-colors') ||
-	hasFlag('color=false') ||
-	hasFlag('color=never')) {
-	forceColor = 0;
-} else if (hasFlag('color') ||
-	hasFlag('colors') ||
-	hasFlag('color=true') ||
-	hasFlag('color=always')) {
-	forceColor = 1;
-}
-
-if ('FORCE_COLOR' in env) {
-	if (env.FORCE_COLOR === 'true') {
-		forceColor = 1;
-	} else if (env.FORCE_COLOR === 'false') {
-		forceColor = 0;
-	} else {
-		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
-	}
-}
-
-function translateLevel(level) {
-	if (level === 0) {
-		return false;
-	}
-
-	return {
-		level,
-		hasBasic: true,
-		has256: level >= 2,
-		has16m: level >= 3
-	};
-}
-
-function supportsColor(haveStream, streamIsTTY) {
-	if (forceColor === 0) {
-		return 0;
-	}
-
-	if (hasFlag('color=16m') ||
-		hasFlag('color=full') ||
-		hasFlag('color=truecolor')) {
-		return 3;
-	}
-
-	if (hasFlag('color=256')) {
-		return 2;
-	}
-
-	if (haveStream && !streamIsTTY && forceColor === undefined) {
-		return 0;
-	}
-
-	const min = forceColor || 0;
-
-	if (env.TERM === 'dumb') {
-		return min;
-	}
-
-	if (process.platform === 'win32') {
-		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
-		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
-		const osRelease = os.release().split('.');
-		if (
-			Number(osRelease[0]) >= 10 &&
-			Number(osRelease[2]) >= 10586
-		) {
-			return Number(osRelease[2]) >= 14931 ? 3 : 2;
-		}
-
-		return 1;
-	}
-
-	if ('CI' in env) {
-		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
-			return 1;
-		}
-
-		return min;
-	}
-
-	if ('TEAMCITY_VERSION' in env) {
-		return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
-	}
-
-	if (env.COLORTERM === 'truecolor') {
-		return 3;
-	}
-
-	if ('TERM_PROGRAM' in env) {
-		const version = parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
-
-		switch (env.TERM_PROGRAM) {
-			case 'iTerm.app':
-				return version >= 3 ? 3 : 2;
-			case 'Apple_Terminal':
-				return 2;
-			// No default
-		}
-	}
-
-	if (/-256(color)?$/i.test(env.TERM)) {
-		return 2;
-	}
-
-	if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
-		return 1;
-	}
-
-	if ('COLORTERM' in env) {
-		return 1;
-	}
-
-	return min;
-}
-
-function getSupportLevel(stream) {
-	const level = supportsColor(stream, stream && stream.isTTY);
-	return translateLevel(level);
-}
-
-module.exports = {
-	supportsColor: getSupportLevel,
-	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
-	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
-};
 
 
 /***/ }),
@@ -34711,6 +34566,14 @@ function wrappy (fn, cb) {
     return ret
   }
 }
+
+
+/***/ }),
+
+/***/ 5545:
+/***/ ((module) => {
+
+module.exports = eval("require")("supports-color");
 
 
 /***/ }),
