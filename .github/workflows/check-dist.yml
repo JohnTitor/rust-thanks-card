@@ -3,7 +3,7 @@ name: Check dist/
 on:
   pull_request:
     paths-ignore:
-      - '**.md'
+      - "**.md"
   workflow_dispatch:
 
 permissions:
@@ -16,6 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
       - name: Set Node.js 22.x
@@ -30,17 +32,7 @@ jobs:
           pnpm build
           pnpm package
 
-      - name: Compare the expected and actual dist/ directories
-        run: |
-          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
-            echo "Detected uncommitted changes after build. See status below:"
-            git diff
-            exit 1
-          fi
-        id: diff
-
       - name: Commit changes
-        if: ${{ failure() && steps.diff.conclusion == 'failure' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -50,4 +42,4 @@ jobs:
             exit 0
           fi
           git commit -m "chore: regenerate dist via CI"
-          git push origin ${{ github.ref }}
+          git push origin
