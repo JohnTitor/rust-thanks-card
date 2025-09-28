@@ -1,20 +1,14 @@
-# `dist/index.js` is a special file in Actions.
-# When you reference an action with `uses:` in a workflow,
-# `index.js` is the code that will run.
-# For our project, we generate this file through a build process from other source files.
-# We need to make sure the checked-in `index.js` actually matches what we expect it to be.
 name: Check dist/
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
   pull_request:
     paths-ignore:
       - '**.md'
   workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   check-dist:
@@ -45,9 +39,15 @@ jobs:
           fi
         id: diff
 
-      # If index.js was different than expected, upload the expected version as an artifact
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - name: Commit changes
         if: ${{ failure() && steps.diff.conclusion == 'failure' }}
-        with:
-          name: dist
-          path: dist/
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: regenerate dist via CI"
+          git push origin ${{ github.ref }}
