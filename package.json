@@ -3,39 +3,41 @@
 	"version": "0.0.0",
 	"private": true,
 	"description": "Generate a card from Rust Thanks",
-	"main": "lib/main.js",
-	"packageManager": "pnpm@10.20.0",
-	"scripts": {
-		"build": "tsc",
-		"format": "biome format --write .",
-		"lint": "biome check .",
-		"lint:fix": "biome check --write .",
-		"package": "ncc build --source-map --license licenses.txt",
-		"test": "vitest run",
-		"all": "biome ci && pnpm lint && pnpm build && pnpm test && pnpm package"
-	},
+	"keywords": [
+		"actions",
+		"card",
+		"rust"
+	],
+	"license": "MIT",
+	"author": "Yuki Okushi",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/JohnTitor/rust-thanks-card.git"
 	},
-	"keywords": [
-		"actions",
-		"rust",
-		"card"
-	],
-	"author": "Yuki Okushi",
-	"license": "MIT",
+	"type": "module",
+	"main": "lib/main.js",
+	"scripts": {
+		"build": "tsc",
+		"format": "oxfmt --write .",
+		"format:check": "oxfmt --check .",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix .",
+		"package": "ncc build lib/main.js --source-map --license licenses.txt -o dist",
+		"test": "vitest run",
+		"all": "pnpm format:check && pnpm lint && pnpm build && pnpm test && pnpm package"
+	},
 	"dependencies": {
-		"@actions/core": "^1.11.1",
-		"@actions/github": "^6.0.1"
+		"@actions/core": "^3.0.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.4",
-		"@types/node": "^24.0.7",
+		"@types/node": "^25.6.0",
 		"@vercel/ncc": "^0.38.3",
-		"globals": "^17.0.0",
+		"globals": "^17.5.0",
 		"js-yaml": "^4.1.0",
-		"typescript": "^5.8.3",
-		"vitest": "^4.0.0"
-	}
+		"oxfmt": "0.44.0",
+		"oxlint": "1.59.0",
+		"typescript": "^6.0.2",
+		"vitest": "^4.1.4"
+	},
+	"packageManager": "pnpm@10.20.0"
 }

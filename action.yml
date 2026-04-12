@@ -1,25 +1,66 @@
-name: 'rust-thanks-action'
-description: 'Generate a card from Rust Thanks'
-author: 'Yuki Okushi'
+name: "rust-thanks-action"
+description: "Generate badge URLs and SVG cards from Rust Thanks"
+author: "Yuki Okushi"
 branding:
-  icon: 'award'
-  color: 'green'
+  icon: "award"
+  color: "green"
 inputs:
-  github_token:
-    required: false
-    default: ${{ github.token }}
-    description: 'GitHub token'
   name:
     required: true
-    description: 'A name listed in Rust Thanks'
-  type:
+    description: "A name listed in Rust Thanks"
+  format:
     required: false
-    description: 'Whether a card or badge'
-    default: 'badge'
-  image_url:
+    default: "svg"
+    description: "Output format: svg, badge, or both"
+  output-path:
     required: false
-    description: 'An image URL to be used in a card'
-    default: ''
+    default: "rust-thanks-card.svg"
+    description: "Where to write the generated SVG when format includes svg"
+  avatar-url:
+    required: false
+    default: ""
+    description: "Optional avatar image URL to embed in the SVG card"
+  title:
+    required: false
+    default: "Rust Thanks"
+    description: "Headline shown in the SVG card"
+  subtitle:
+    required: false
+    default: "Contributor stats"
+    description: "Subheading shown in the SVG card"
+  theme:
+    required: false
+    default: "rust"
+    description: "Card theme: rust, light, or slate"
+  write-readme:
+    required: false
+    default: "false"
+    description: "Whether to replace a local README marker block with the generated snippet"
+  readme-path:
+    required: false
+    default: "README.md"
+    description: "README path to update when write-readme is true"
+  readme-marker:
+    required: false
+    default: "rust-thanks-card"
+    description: "Marker name used as START_SECTION/END_SECTION suffix"
+outputs:
+  name:
+    description: "Matched name from Rust Thanks"
+  rank:
+    description: "Numeric rank from Rust Thanks"
+  ordinal-rank:
+    description: "Ordinal rank such as 1st or 42nd"
+  contributions:
+    description: "Contribution count from Rust Thanks"
+  badge-url:
+    description: "Generated shields.io badge URL"
+  svg:
+    description: "Generated SVG markup when format includes svg"
+  svg-path:
+    description: "Absolute path to the generated SVG file when format includes svg"
+  readme-snippet:
+    description: "Snippet written into README when write-readme is enabled"
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: "node24"
+  main: "dist/index.js"
