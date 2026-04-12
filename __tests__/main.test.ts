@@ -1,10 +1,12 @@
 import { expect, test } from "vitest";
 import {
 	buildReadmeSnippet,
+	buildAuthenticatedRemoteUrl,
 	collectCommitPaths,
 	extractStats,
 	genBadgeURL,
 	renderSvg,
+	resolvePushBranch,
 	replaceMarkedSection,
 	toOrdinal,
 } from "../src/main";
@@ -117,4 +119,22 @@ test("collect commit paths only for action outputs", () => {
 			"/tmp/workspace",
 		),
 	).toEqual(["assets/rust-thanks.svg", "README.md"]);
+});
+
+test("resolve push branch from input or workflow env", () => {
+	process.env.GITHUB_HEAD_REF = "feature-branch";
+	process.env.GITHUB_REF_NAME = "fallback-branch";
+	expect(resolvePushBranch("")).toBe("feature-branch");
+	expect(resolvePushBranch("explicit-branch")).toBe("explicit-branch");
+	delete process.env.GITHUB_HEAD_REF;
+	delete process.env.GITHUB_REF_NAME;
+});
+
+test("build authenticated GitHub remote url", () => {
+	expect(
+		buildAuthenticatedRemoteUrl("https://github.com/JohnTitor/rust-thanks-card.git", "secret"),
+	).toBe("https://x-access-token:secret@github.com/JohnTitor/rust-thanks-card.git");
+	expect(
+		buildAuthenticatedRemoteUrl("git@github.com:JohnTitor/rust-thanks-card.git", "secret"),
+	).toBe("https://x-access-token:secret@github.com/JohnTitor/rust-thanks-card.git");
 });

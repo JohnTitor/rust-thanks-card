@@ -59,13 +59,16 @@ type Format = "badge" | "both" | "svg";
 
 type ActionConfig = {
 	avatarUrl: string;
-	commitChanges: boolean;
 	commitMessage: string;
 	format: Format;
 	gitUserEmail: string;
 	gitUserName: string;
+	githubToken: string;
 	name: string;
 	outputPath: string;
+	pushBranch: string;
+	pushChanges: boolean;
+	remoteName: string;
 	readmeMarker: string;
 	readmePath: string;
 	subtitle: string;
@@ -93,6 +96,8 @@ type ActionResult = {
 	badgeUrl: string;
 	commitSha?: string;
 	committed?: boolean;
+	pushed?: boolean;
+	pushedRef?: string;
 	readmePath?: string;
 	readmeSnippet?: string;
 	svg?: string;
@@ -127,6 +132,7 @@ async function run(): Promise<void> {
 		}
 
 		await maybeCommitChanges(config, result);
+		await maybePushChanges(config, result);
 		setOutputs(stats, result);
 		await writeSummary(stats, result);
 	} catch (error) {
@@ -157,16 +163,20 @@ function readConfig(): ActionConfig {
 	}
 
 	const outputPath = core.getInput("output-path").trim();
+	const pushChanges = core.getBooleanInput("push-changes");
 
 	return {
 		avatarUrl: core.getInput("avatar-url").trim(),
-		commitChanges: core.getBooleanInput("commit-changes"),
 		commitMessage: core.getInput("commit-message").trim() || DEFAULT_COMMIT_MESSAGE,
 		format: formatInput,
 		gitUserEmail: core.getInput("git-user-email").trim() || DEFAULT_GIT_USER_EMAIL,
 		gitUserName: core.getInput("git-user-name").trim() || DEFAULT_GIT_USER_NAME,
+		githubToken: core.getInput("github-token").trim(),
 		name,
 		outputPath,
+		pushBranch: core.getInput("push-branch").trim(),
+		pushChanges,
+		remoteName: core.getInput("remote-name").trim() || "origin",
 		readmeMarker: core.getInput("readme-marker").trim(),
 		readmePath: core.getInput("readme-path").trim(),
 		subtitle: core.getInput("subtitle").trim(),
@@ -445,10 +455,10 @@ export function collectCommitPaths(
 }
 
 async function maybeCommitChanges(
-	config: Pick<ActionConfig, "commitChanges" | "commitMessage" | "gitUserEmail" | "gitUserName">,
+	config: Pick<ActionConfig, "commitMessage" | "gitUserEmail" | "gitUserName" | "pushChanges">,
 	result: ActionResult,
 ): Promise<void> {
-	if (!config.commitChanges) {
+	if (!config.pushChanges) {
 		return;
 	}
 
@@ -494,6 +504,76 @@ async function maybeCommitChanges(
 	core.info(`Committed generated files at ${result.commitSha}`);
 }
 
+export function resolvePushBranch(pushBranchInput: string): string {
+	return pushBranchInput || process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "";
+}
+
+export function buildAuthenticatedRemoteUrl(remoteUrl: string, githubToken: string): string {
+	if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
+		const url = new URL(remoteUrl);
+		url.username = "x-access-token";
+		url.password = githubToken;
+		return url.toString();
+	}
+
+	const sshMatch = remoteUrl.match(/^git@github\.com:(.+)$/);
+	if (sshMatch) {
+		return `https://x-access-token:${encodeURIComponent(githubToken)}@github.com/${sshMatch[1]}`;
+	}
+
+	throw new Error(
+		`Cannot derive an authenticated push URL from remote "${remoteUrl}". Use an https GitHub remote or rely on checkout credentials.`,
+	);
+}
+
+async function maybePushChanges(
+	config: Pick<ActionConfig, "githubToken" | "pushBranch" | "pushChanges" | "remoteName">,
+	result: ActionResult,
+): Promise<void> {
+	if (!config.pushChanges) {
+		return;
+	}
+
+	if (!result.committed || !result.commitSha) {
+		core.info("Skipping push because this action did not create a new commit.");
+		result.pushed = false;
+		return;
+	}
+
+	const branch = resolvePushBranch(config.pushBranch);
+	if (branch === "") {
+		throw new Error(
+			"push-changes is enabled, but no branch could be determined. Set push-branch explicitly.",
+		);
+	}
+
+	const workspaceRoot = process.env.GITHUB_WORKSPACE || process.cwd();
+	if (config.githubToken !== "") {
+		core.setSecret(config.githubToken);
+		const remoteResult = await execFileAsync("git", ["remote", "get-url", config.remoteName], {
+			cwd: workspaceRoot,
+		});
+		const authenticatedRemoteUrl = buildAuthenticatedRemoteUrl(
+			remoteResult.stdout.trim(),
+			config.githubToken,
+		);
+		await execFileAsync(
+			"git",
+			["remote", "set-url", "--push", config.remoteName, authenticatedRemoteUrl],
+			{
+				cwd: workspaceRoot,
+			},
+		);
+	}
+
+	await execFileAsync("git", ["push", config.remoteName, `HEAD:${branch}`], {
+		cwd: workspaceRoot,
+	});
+	result.pushed = true;
+	result.pushedRef = `${config.remoteName}/${branch}`;
+	core.info(`Pushed ${result.commitSha} to ${result.pushedRef}`);
+}
+
 function setOutputs(stats: RustThanksStats, result: ActionResult): void {
 	core.setOutput("name", stats.name);
 	core.setOutput("rank", String(stats.rank));
@@ -501,6 +581,7 @@ function setOutputs(stats: RustThanksStats, result: ActionResult): void {
 	core.setOutput("contributions", String(stats.contributions));
 	core.setOutput("badge-url", result.badgeUrl);
 	core.setOutput("committed", result.committed ? "true" : "false");
+	core.setOutput("pushed", result.pushed ? "true" : "false");
 
 	if (result.svg) {
 		core.setOutput("svg", result.svg);
@@ -513,6 +594,9 @@ function setOutputs(stats: RustThanksStats, result: ActionResult): void {
 	}
 	if (result.commitSha) {
 		core.setOutput("commit-sha", result.commitSha);
+	}
+	if (result.pushedRef) {
+		core.setOutput("pushed-ref", result.pushedRef);
 	}
 }
 
@@ -542,6 +626,9 @@ async function writeSummary(stats: RustThanksStats, result: ActionResult): Promi
 	}
 	if (result.committed && result.commitSha) {
 		core.summary.addRaw(`Commit SHA: ${result.commitSha}`, true);
+	}
+	if (result.pushed && result.pushedRef) {
+		core.summary.addRaw(`Pushed ref: ${result.pushedRef}`, true);
 	}
 
 	await core.summary.write();

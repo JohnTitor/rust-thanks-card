@@ -27936,12 +27936,14 @@ var __webpack_exports__ = {};
 
 // EXPORTS
 __nccwpck_require__.d(__webpack_exports__, {
+  $P: () => (/* binding */ buildAuthenticatedRemoteUrl),
   A_: () => (/* binding */ buildReadmeSnippet),
   gj: () => (/* binding */ collectCommitPaths),
   p: () => (/* binding */ extractStats),
   vb: () => (/* binding */ genBadgeURL),
   lW: () => (/* binding */ renderSvg),
   S3: () => (/* binding */ replaceMarkedSection),
+  RF: () => (/* binding */ resolvePushBranch),
   ZO: () => (/* binding */ toOrdinal)
 });
 
@@ -30662,7 +30664,7 @@ function exportVariable(name, val) {
  * ```
  */
 function core_setSecret(secret) {
-    issueCommand('add-mask', {}, secret);
+    command_issueCommand('add-mask', {}, secret);
 }
 /**
  * Prepends inputPath to the PATH (for this action and future actions)
@@ -30979,6 +30981,7 @@ async function run() {
             result.readmeSnippet = readmeSnippet;
         }
         await maybeCommitChanges(config, result);
+        await maybePushChanges(config, result);
         setOutputs(stats, result);
         await writeSummary(stats, result);
     }
@@ -31004,15 +31007,24 @@ function readConfig() {
         throw new Error("The name input must not be empty.");
     }
     const outputPath = getInput("output-path").trim();
+    const commitChanges = getBooleanInput("commit-changes");
+    const pushChanges = getBooleanInput("push-changes");
+    if (pushChanges && !commitChanges) {
+        throw new Error("push-changes requires commit-changes to be enabled.");
+    }
     return {
         avatarUrl: getInput("avatar-url").trim(),
-        commitChanges: getBooleanInput("commit-changes"),
+        commitChanges,
         commitMessage: getInput("commit-message").trim() || DEFAULT_COMMIT_MESSAGE,
         format: formatInput,
         gitUserEmail: getInput("git-user-email").trim() || DEFAULT_GIT_USER_EMAIL,
         gitUserName: getInput("git-user-name").trim() || DEFAULT_GIT_USER_NAME,
+        githubToken: getInput("github-token").trim(),
         name,
         outputPath,
+        pushBranch: getInput("push-branch").trim(),
+        pushChanges,
+        remoteName: getInput("remote-name").trim() || "origin",
         readmeMarker: getInput("readme-marker").trim(),
         readmePath: getInput("readme-path").trim(),
         subtitle: getInput("subtitle").trim(),
@@ -31266,6 +31278,53 @@ async function maybeCommitChanges(config, result) {
     result.committed = true;
     info(`Committed generated files at ${result.commitSha}`);
 }
+function resolvePushBranch(pushBranchInput) {
+    return pushBranchInput || process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "";
+}
+function buildAuthenticatedRemoteUrl(remoteUrl, githubToken) {
+    if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
+        const url = new URL(remoteUrl);
+        url.username = "x-access-token";
+        url.password = githubToken;
+        return url.toString();
+    }
+    const sshMatch = remoteUrl.match(/^git@github\.com:(.+)$/);
+    if (sshMatch) {
+        return `https://x-access-token:${encodeURIComponent(githubToken)}@github.com/${sshMatch[1]}`;
+    }
+    throw new Error(`Cannot derive an authenticated push URL from remote "${remoteUrl}". Use an https GitHub remote or rely on checkout credentials.`);
+}
+async function maybePushChanges(config, result) {
+    if (!config.pushChanges) {
+        return;
+    }
+    if (!result.committed || !result.commitSha) {
+        info("Skipping push because this action did not create a new commit.");
+        result.pushed = false;
+        return;
+    }
+    const branch = resolvePushBranch(config.pushBranch);
+    if (branch === "") {
+        throw new Error("push-changes is enabled, but no branch could be determined. Set push-branch explicitly.");
+    }
+    const workspaceRoot = process.env.GITHUB_WORKSPACE || process.cwd();
+    if (config.githubToken !== "") {
+        core_setSecret(config.githubToken);
+        const remoteResult = await execFileAsync("git", ["remote", "get-url", config.remoteName], {
+            cwd: workspaceRoot,
+        });
+        const authenticatedRemoteUrl = buildAuthenticatedRemoteUrl(remoteResult.stdout.trim(), config.githubToken);
+        await execFileAsync("git", ["remote", "set-url", "--push", config.remoteName, authenticatedRemoteUrl], {
+            cwd: workspaceRoot,
+        });
+    }
+    await execFileAsync("git", ["push", config.remoteName, `HEAD:${branch}`], {
+        cwd: workspaceRoot,
+    });
+    result.pushed = true;
+    result.pushedRef = `${config.remoteName}/${branch}`;
+    info(`Pushed ${result.commitSha} to ${result.pushedRef}`);
+}
 function setOutputs(stats, result) {
     setOutput("name", stats.name);
     setOutput("rank", String(stats.rank));
@@ -31273,6 +31332,7 @@ function setOutputs(stats, result) {
     setOutput("contributions", String(stats.contributions));
     setOutput("badge-url", result.badgeUrl);
     setOutput("committed", result.committed ? "true" : "false");
+    setOutput("pushed", result.pushed ? "true" : "false");
     if (result.svg) {
         setOutput("svg", result.svg);
     }
@@ -31284,6 +31344,9 @@ function setOutputs(stats, result) {
     }
     if (result.commitSha) {
         setOutput("commit-sha", result.commitSha);
+    }
+    if (result.pushedRef) {
+        setOutput("pushed-ref", result.pushedRef);
     }
 }
 async function writeSummary(stats, result) {
@@ -31311,19 +31374,24 @@ async function writeSummary(stats, result) {
     if (result.committed && result.commitSha) {
         summary.addRaw(`Commit SHA: ${result.commitSha}`, true);
     }
+    if (result.pushed && result.pushedRef) {
+        summary.addRaw(`Pushed ref: ${result.pushedRef}`, true);
+    }
     await summary.write();
 }
 if (process.argv[1] && import.meta.url === (0,external_node_url_.pathToFileURL)(process.argv[1]).href) {
     void run();
 }
 
+var __webpack_exports__buildAuthenticatedRemoteUrl = __webpack_exports__.$P;
 var __webpack_exports__buildReadmeSnippet = __webpack_exports__.A_;
 var __webpack_exports__collectCommitPaths = __webpack_exports__.gj;
 var __webpack_exports__extractStats = __webpack_exports__.p;
 var __webpack_exports__genBadgeURL = __webpack_exports__.vb;
 var __webpack_exports__renderSvg = __webpack_exports__.lW;
 var __webpack_exports__replaceMarkedSection = __webpack_exports__.S3;
+var __webpack_exports__resolvePushBranch = __webpack_exports__.RF;
 var __webpack_exports__toOrdinal = __webpack_exports__.ZO;
-export { __webpack_exports__buildReadmeSnippet as buildReadmeSnippet, __webpack_exports__collectCommitPaths as collectCommitPaths, __webpack_exports__extractStats as extractStats, __webpack_exports__genBadgeURL as genBadgeURL, __webpack_exports__renderSvg as renderSvg, __webpack_exports__replaceMarkedSection as replaceMarkedSection, __webpack_exports__toOrdinal as toOrdinal };
+export { __webpack_exports__buildAuthenticatedRemoteUrl as buildAuthenticatedRemoteUrl, __webpack_exports__buildReadmeSnippet as buildReadmeSnippet, __webpack_exports__collectCommitPaths as collectCommitPaths, __webpack_exports__extractStats as extractStats, __webpack_exports__genBadgeURL as genBadgeURL, __webpack_exports__renderSvg as renderSvg, __webpack_exports__replaceMarkedSection as replaceMarkedSection, __webpack_exports__resolvePushBranch as resolvePushBranch, __webpack_exports__toOrdinal as toOrdinal };
 
 //# sourceMappingURL=index.js.map

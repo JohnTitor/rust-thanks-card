@@ -32,22 +32,34 @@ inputs:
     required: false
     default: "rust"
     description: "Card theme: rust, light, or slate"
-  commit-changes:
-    required: false
-    default: "false"
-    description: "Whether to commit files written by this action"
   commit-message:
     required: false
     default: "Update Rust Thanks card"
-    description: "Commit message used when commit-changes is true"
+    description: "Commit message used when push-changes is true"
+  push-changes:
+    required: false
+    default: "false"
+    description: "Whether to push the generated commit to a remote branch"
+  push-branch:
+    required: false
+    default: ""
+    description: "Branch to push to. Defaults to GITHUB_HEAD_REF or GITHUB_REF_NAME"
+  remote-name:
+    required: false
+    default: "origin"
+    description: "Git remote name used when push-changes is true"
+  github-token:
+    required: false
+    default: ${{ github.token }}
+    description: "GitHub token used to configure an authenticated push URL"
   git-user-name:
     required: false
     default: "github-actions[bot]"
-    description: "Git author name used when commit-changes is true"
+    description: "Git author name used when push-changes is true"
   git-user-email:
     required: false
     default: "41898282+github-actions[bot]@users.noreply.github.com"
-    description: "Git author email used when commit-changes is true"
+    description: "Git author email used when push-changes is true"
   write-readme:
     required: false
     default: "false"
@@ -74,7 +86,11 @@ outputs:
   committed:
     description: "Whether this action created a commit"
   commit-sha:
-    description: "Commit SHA when commit-changes created a commit"
+    description: "Commit SHA when push-changes created a commit"
+  pushed:
+    description: "Whether this action pushed the generated commit"
+  pushed-ref:
+    description: "Remote ref updated when push-changes succeeds"
   svg:
     description: "Generated SVG markup when format includes svg"
   svg-path:
