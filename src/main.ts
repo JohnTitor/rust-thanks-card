@@ -1,7 +1,6 @@
 import { Buffer } from "node:buffer";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import axios from "axios";
 
 const MARK = {
 	START: "<!--START_SECTION:rust-thanks-card-->",
@@ -141,10 +140,15 @@ export function genSVGURL(
 
 async function getList(): Promise<string> {
 	try {
-		const res = await axios.get(
+		const res = await fetch(
 			"https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html",
 		);
-		return res.data;
+		if (!res.ok) {
+			throw new Error(
+				`Failed to fetch Rust Thanks list: ${res.status} ${res.statusText}`,
+			);
+		}
+		return await res.text();
 	} catch (error) {
 		if (error instanceof Error) core.setFailed(error.message);
 	}
