@@ -22,12 +22,8 @@ inputs:
     description: "Optional avatar image URL to embed in the SVG card"
   title:
     required: false
-    default: "Rust Thanks"
+    default: "Rust Contribution Stats"
     description: "Headline shown in the SVG card"
-  subtitle:
-    required: false
-    default: "Contributor stats"
-    description: "Subheading shown in the SVG card"
   theme:
     required: false
     default: "rust"

@@ -7,8 +7,7 @@ import { promisify } from "node:util";
 import * as core from "@actions/core";
 
 const DEFAULT_OUTPUT_PATH = "rust-thanks-card.svg";
-const THANKS_URL =
-	"https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html";
+const THANKS_URL = "https://thanks.rust-lang.org/rust/all-time/";
 const DEFAULT_COMMIT_MESSAGE = "Update Rust Thanks card";
 const DEFAULT_GIT_USER_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com";
 const DEFAULT_GIT_USER_NAME = "github-actions[bot]";
@@ -71,7 +70,6 @@ type ActionConfig = {
 	remoteName: string;
 	readmeMarker: string;
 	readmePath: string;
-	subtitle: string;
 	theme: ThemeName;
 	title: string;
 	writeReadme: boolean;
@@ -87,7 +85,6 @@ export type RustThanksStats = {
 type RenderContext = {
 	avatarDataUrl?: string;
 	stats: RustThanksStats;
-	subtitle: string;
 	theme: ThemeName;
 	title: string;
 };
@@ -117,7 +114,6 @@ async function run(): Promise<void> {
 			const svg = renderSvg({
 				avatarDataUrl: await fetchAvatarDataUrl(config.avatarUrl),
 				stats,
-				subtitle: config.subtitle,
 				theme: config.theme,
 				title: config.title,
 			});
@@ -179,7 +175,6 @@ function readConfig(): ActionConfig {
 		remoteName: core.getInput("remote-name").trim() || "origin",
 		readmeMarker: core.getInput("readme-marker").trim(),
 		readmePath: core.getInput("readme-path").trim(),
-		subtitle: core.getInput("subtitle").trim(),
 		theme: themeInput,
 		title: core.getInput("title").trim(),
 		writeReadme: core.getBooleanInput("write-readme"),
@@ -295,46 +290,56 @@ async function fetchAvatarDataUrl(url: string): Promise<string | undefined> {
 	return `data:${mediaType};base64,${bytes.toString("base64")}`;
 }
 
-export function renderSvg({ avatarDataUrl, stats, subtitle, theme, title }: RenderContext): string {
+export function renderSvg({ avatarDataUrl, stats, theme, title }: RenderContext): string {
 	const palette = THEMES[theme];
 	const safeTitle = escapeXml(title);
-	const safeSubtitle = escapeXml(subtitle);
 	const safeName = escapeXml(stats.name);
 	const contributions = stats.contributions.toLocaleString("en-US");
+	const sansStack = "'Inter', 'Segoe UI', ui-sans-serif, system-ui, sans-serif";
+	const monoStack = "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
 	const avatarMarkup = avatarDataUrl
-		? `<image href="${escapeAttribute(avatarDataUrl)}" x="52" y="68" width="96" height="96" clip-path="url(#avatar-clip)" preserveAspectRatio="xMidYMid slice" />`
-		: `<text x="100" y="131" text-anchor="middle" font-size="42" font-weight="700" fill="${palette.text}" font-family="ui-sans-serif, system-ui, sans-serif">${escapeXml(stats.name.slice(0, 1).toUpperCase())}</text>`;
+		? `<image href="${escapeAttribute(avatarDataUrl)}" x="52" y="104" width="112" height="112" clip-path="url(#avatar-clip)" preserveAspectRatio="xMidYMid slice" />`
+		: `<text x="108" y="175" text-anchor="middle" font-size="48" font-weight="700" fill="${palette.text}" font-family="${sansStack}">${escapeXml(stats.name.slice(0, 1).toUpperCase())}</text>`;
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="640" height="320" viewBox="0 0 640 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
 <title id="title">${safeTitle}</title>
 <desc id="desc">${safeName} has ${contributions} Rust contributions and is ranked ${stats.ordinalRank}.</desc>
 <defs>
-<linearGradient id="bg" x1="40" y1="24" x2="600" y2="296" gradientUnits="userSpaceOnUse">
+<linearGradient id="bg" x1="0" y1="0" x2="640" y2="320" gradientUnits="userSpaceOnUse">
 <stop stop-color="${palette.backgroundStart}" />
 <stop offset="1" stop-color="${palette.backgroundEnd}" />
 </linearGradient>
+<radialGradient id="glow" cx="560" cy="56" r="260" gradientUnits="userSpaceOnUse">
+<stop stop-color="${palette.accent}" stop-opacity="0.32" />
+<stop offset="1" stop-color="${palette.accent}" stop-opacity="0" />
+</radialGradient>
+<linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+<stop stop-color="${palette.accent}" />
+<stop offset="1" stop-color="${palette.accentSoft}" />
+</linearGradient>
+<linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+<stop stop-color="${palette.accent}" />
+<stop offset="1" stop-color="${palette.accentSoft}" stop-opacity="0.15" />
+</linearGradient>
 <clipPath id="avatar-clip">
-<circle cx="100" cy="116" r="48" />
+<circle cx="108" cy="160" r="56" />
 </clipPath>
 </defs>
-<rect x="16" y="16" width="608" height="288" rx="28" fill="url(#bg)" />
-<rect x="32" y="32" width="576" height="256" rx="22" fill="${palette.surface}" fill-opacity="0.22" stroke="${palette.border}" />
-<rect x="48" y="48" width="104" height="136" rx="24" fill="${palette.avatarBackground}" />
+<rect x="0" y="0" width="640" height="320" rx="24" fill="url(#bg)" />
+<rect x="0" y="0" width="640" height="320" rx="24" fill="url(#glow)" />
+<rect x="0.5" y="0.5" width="639" height="319" rx="23.5" fill="none" stroke="${palette.border}" stroke-opacity="0.55" />
+<circle cx="108" cy="160" r="63" fill="none" stroke="url(#ring)" stroke-width="1.5" />
+<circle cx="108" cy="160" r="56" fill="${palette.avatarBackground}" />
 ${avatarMarkup}
-<rect x="472" y="48" width="120" height="38" rx="19" fill="${palette.accent}" />
-<text x="532" y="72" text-anchor="middle" font-size="18" font-weight="700" fill="${palette.surface}" font-family="ui-sans-serif, system-ui, sans-serif">${stats.ordinalRank}</text>
-<text x="184" y="86" font-size="22" font-weight="600" fill="${palette.label}" font-family="ui-sans-serif, system-ui, sans-serif">${safeTitle}</text>
-<text x="184" y="121" font-size="40" font-weight="800" fill="${palette.text}" font-family="ui-sans-serif, system-ui, sans-serif">${safeName}</text>
-<text x="184" y="149" font-size="18" fill="${palette.text}" fill-opacity="0.82" font-family="ui-sans-serif, system-ui, sans-serif">${safeSubtitle}</text>
-<rect x="184" y="188" width="184" height="72" rx="18" fill="${palette.surface}" fill-opacity="0.35" stroke="${palette.border}" />
-<rect x="384" y="188" width="176" height="72" rx="18" fill="${palette.surface}" fill-opacity="0.35" stroke="${palette.border}" />
-<text x="208" y="214" font-size="14" font-weight="700" fill="${palette.label}" font-family="ui-sans-serif, system-ui, sans-serif">CONTRIBUTIONS</text>
-<text x="208" y="244" font-size="30" font-weight="800" fill="${palette.text}" font-family="ui-sans-serif, system-ui, sans-serif">${contributions}</text>
-<text x="408" y="214" font-size="14" font-weight="700" fill="${palette.label}" font-family="ui-sans-serif, system-ui, sans-serif">RANK</text>
-<text x="408" y="244" font-size="30" font-weight="800" fill="${palette.text}" font-family="ui-sans-serif, system-ui, sans-serif">${stats.ordinalRank}</text>
-<circle cx="562" cy="238" r="11" fill="${palette.accent}" fill-opacity="0.95" />
-<circle cx="533" cy="238" r="7" fill="${palette.accentSoft}" />
+<text x="216" y="100" font-size="15" letter-spacing="4" font-weight="700" fill="${palette.accent}" font-family="${sansStack}">${safeTitle}</text>
+<text x="216" y="148" font-size="38" font-weight="800" fill="${palette.text}" font-family="${sansStack}">${safeName}</text>
+<rect x="216" y="162" width="44" height="2" rx="1" fill="url(#accent)" />
+<text x="216" y="232" font-size="10" letter-spacing="2.5" font-weight="700" fill="${palette.text}" fill-opacity="0.5" font-family="${sansStack}">CONTRIBUTIONS</text>
+<text x="216" y="272" font-size="32" font-weight="800" fill="${palette.text}" font-family="${monoStack}">${contributions}</text>
+<line x1="416" y1="224" x2="416" y2="282" stroke="${palette.border}" stroke-opacity="0.65" stroke-width="1" />
+<text x="440" y="232" font-size="10" letter-spacing="2.5" font-weight="700" fill="${palette.text}" fill-opacity="0.5" font-family="${sansStack}">GLOBAL RANK</text>
+<text x="440" y="272" font-size="32" font-weight="800" fill="${palette.text}" font-family="${monoStack}">${stats.ordinalRank}</text>
 </svg>`;
 }
 
@@ -392,7 +397,7 @@ export function buildReadmeSnippet(
 	const snippetPath = toMarkdownPath(
 		relative(dirname(readmePath), result.svgPath) || result.svgPath,
 	);
-	return `![Rust Thanks card](${snippetPath})`;
+	return `<img src="${snippetPath}" alt="Rust Thanks card" />`;
 }
 
 export function replaceMarkedSection(content: string, marker: string, snippet: string): string {
@@ -404,7 +409,7 @@ export function replaceMarkedSection(content: string, marker: string, snippet: s
 		throw new Error(`README marker block ${start} ... ${end} was not found.`);
 	}
 
-	return content.replace(pattern, `$1\n${snippet}\n$2`);
+	return content.replace(pattern, `$1\n\n${snippet}\n\n$2`);
 }
 
 function escapeRegExp(value: string): string {

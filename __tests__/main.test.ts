@@ -70,7 +70,6 @@ test("render a standalone SVG", () => {
 			ordinalRank: "1st",
 			rank: 1,
 		},
-		subtitle: "Contributor stats",
 		theme: "rust",
 		title: "Rust Thanks",
 	});
@@ -92,7 +91,7 @@ test("build a README snippet for a generated svg", () => {
 			},
 			"/tmp/out/README.md",
 		),
-	).toBe("![Rust Thanks card](./cards/rust-thanks.svg)");
+	).toBe('<img src="./cards/rust-thanks.svg" alt="Rust Thanks card" />');
 });
 
 test("replace README marker block", () => {
