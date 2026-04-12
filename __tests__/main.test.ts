@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import {
 	buildReadmeSnippet,
+	collectCommitPaths,
 	extractStats,
 	genBadgeURL,
 	renderSvg,
@@ -104,4 +105,16 @@ old
 	expect(
 		replaceMarkedSection(content, "rust-thanks-card", "![Rust Thanks card](./rust-thanks.svg)"),
 	).toContain("![Rust Thanks card](./rust-thanks.svg)");
+});
+
+test("collect commit paths only for action outputs", () => {
+	expect(
+		collectCommitPaths(
+			{
+				readmePath: "/tmp/workspace/README.md",
+				svgPath: "/tmp/workspace/assets/rust-thanks.svg",
+			},
+			"/tmp/workspace",
+		),
+	).toEqual(["assets/rust-thanks.svg", "README.md"]);
 });

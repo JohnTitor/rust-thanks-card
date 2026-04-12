@@ -27937,6 +27937,7 @@ var __webpack_exports__ = {};
 // EXPORTS
 __nccwpck_require__.d(__webpack_exports__, {
   A_: () => (/* binding */ buildReadmeSnippet),
+  gj: () => (/* binding */ collectCommitPaths),
   p: () => (/* binding */ extractStats),
   vb: () => (/* binding */ genBadgeURL),
   lW: () => (/* binding */ renderSvg),
@@ -27946,12 +27947,16 @@ __nccwpck_require__.d(__webpack_exports__, {
 
 // EXTERNAL MODULE: external "node:buffer"
 var external_node_buffer_ = __nccwpck_require__(4573);
+;// CONCATENATED MODULE: external "node:child_process"
+const external_node_child_process_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:child_process");
 ;// CONCATENATED MODULE: external "node:fs/promises"
 const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs/promises");
 ;// CONCATENATED MODULE: external "node:path"
 const external_node_path_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:path");
 // EXTERNAL MODULE: external "node:url"
 var external_node_url_ = __nccwpck_require__(3136);
+// EXTERNAL MODULE: external "node:util"
+var external_node_util_ = __nccwpck_require__(7975);
 ;// CONCATENATED MODULE: external "os"
 const external_os_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("os");
 ;// CONCATENATED MODULE: ./node_modules/.pnpm/@actions+core@3.0.0/node_modules/@actions/core/lib/utils.js
@@ -30903,8 +30908,14 @@ function getIDToken(aud) {
 
 
 
+
+
 const DEFAULT_OUTPUT_PATH = "rust-thanks-card.svg";
 const THANKS_URL = "https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html";
+const DEFAULT_COMMIT_MESSAGE = "Update Rust Thanks card";
+const DEFAULT_GIT_USER_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com";
+const DEFAULT_GIT_USER_NAME = "github-actions[bot]";
+const execFileAsync = (0,external_node_util_.promisify)(external_node_child_process_namespaceObject.execFile);
 const THEMES = {
     light: {
         accent: "#b7410e",
@@ -30964,8 +30975,10 @@ async function run() {
         }
         if (config.writeReadme) {
             const readmeSnippet = await updateReadme(config, result);
+            result.readmePath = resolveWorkspacePath(config.readmePath);
             result.readmeSnippet = readmeSnippet;
         }
+        await maybeCommitChanges(config, result);
         setOutputs(stats, result);
         await writeSummary(stats, result);
     }
@@ -30993,7 +31006,11 @@ function readConfig() {
     const outputPath = getInput("output-path").trim();
     return {
         avatarUrl: getInput("avatar-url").trim(),
+        commitChanges: getBooleanInput("commit-changes"),
+        commitMessage: getInput("commit-message").trim() || DEFAULT_COMMIT_MESSAGE,
         format: formatInput,
+        gitUserEmail: getInput("git-user-email").trim() || DEFAULT_GIT_USER_EMAIL,
+        gitUserName: getInput("git-user-name").trim() || DEFAULT_GIT_USER_NAME,
         name,
         outputPath,
         readmeMarker: getInput("readme-marker").trim(),
@@ -31197,12 +31214,65 @@ function resolveWorkspacePath(inputPath) {
     }
     return (0,external_node_path_namespaceObject.resolve)(process.env.GITHUB_WORKSPACE || process.cwd(), inputPath);
 }
+function collectCommitPaths(result, workspaceRoot) {
+    const commitPaths = new Set();
+    for (const path of [result.svgPath, result.readmePath]) {
+        if (!path) {
+            continue;
+        }
+        const relativePath = (0,external_node_path_namespaceObject.relative)(workspaceRoot, path);
+        if (relativePath === "" || relativePath.startsWith("..") || (0,external_node_path_namespaceObject.isAbsolute)(relativePath)) {
+            throw new Error(`Cannot commit ${path} because it is outside the workspace root ${workspaceRoot}.`);
+        }
+        commitPaths.add(relativePath.replaceAll("\\", "/"));
+    }
+    return [...commitPaths];
+}
+async function maybeCommitChanges(config, result) {
+    if (!config.commitChanges) {
+        return;
+    }
+    const workspaceRoot = process.env.GITHUB_WORKSPACE || process.cwd();
+    const commitPaths = collectCommitPaths(result, workspaceRoot);
+    if (commitPaths.length === 0) {
+        info("Skipping commit because the action did not write any local files.");
+        result.committed = false;
+        return;
+    }
+    await execFileAsync("git", ["config", "user.name", config.gitUserName], {
+        cwd: workspaceRoot,
+    });
+    await execFileAsync("git", ["config", "user.email", config.gitUserEmail], {
+        cwd: workspaceRoot,
+    });
+    await execFileAsync("git", ["add", "--", ...commitPaths], {
+        cwd: workspaceRoot,
+    });
+    const { stdout } = await execFileAsync("git", ["diff", "--cached", "--name-only", "--", ...commitPaths], {
+        cwd: workspaceRoot,
+    });
+    if (stdout.trim() === "") {
+        info("Skipping commit because there are no staged changes.");
+        result.committed = false;
+        return;
+    }
+    await execFileAsync("git", ["commit", "-m", config.commitMessage], {
+        cwd: workspaceRoot,
+    });
+    const commitResult = await execFileAsync("git", ["rev-parse", "HEAD"], {
+        cwd: workspaceRoot,
+    });
+    result.commitSha = commitResult.stdout.trim();
+    result.committed = true;
+    info(`Committed generated files at ${result.commitSha}`);
+}
 function setOutputs(stats, result) {
     setOutput("name", stats.name);
     setOutput("rank", String(stats.rank));
     setOutput("ordinal-rank", stats.ordinalRank);
     setOutput("contributions", String(stats.contributions));
     setOutput("badge-url", result.badgeUrl);
+    setOutput("committed", result.committed ? "true" : "false");
     if (result.svg) {
         setOutput("svg", result.svg);
     }
@@ -31211,6 +31281,9 @@ function setOutputs(stats, result) {
     }
     if (result.readmeSnippet) {
         setOutput("readme-snippet", result.readmeSnippet);
+    }
+    if (result.commitSha) {
+        setOutput("commit-sha", result.commitSha);
     }
 }
 async function writeSummary(stats, result) {
@@ -31235,6 +31308,9 @@ async function writeSummary(stats, result) {
     if (result.readmeSnippet) {
         summary.addCodeBlock(result.readmeSnippet, "md");
     }
+    if (result.committed && result.commitSha) {
+        summary.addRaw(`Commit SHA: ${result.commitSha}`, true);
+    }
     await summary.write();
 }
 if (process.argv[1] && import.meta.url === (0,external_node_url_.pathToFileURL)(process.argv[1]).href) {
@@ -31242,11 +31318,12 @@ if (process.argv[1] && import.meta.url === (0,external_node_url_.pathToFileURL)(
 }
 
 var __webpack_exports__buildReadmeSnippet = __webpack_exports__.A_;
+var __webpack_exports__collectCommitPaths = __webpack_exports__.gj;
 var __webpack_exports__extractStats = __webpack_exports__.p;
 var __webpack_exports__genBadgeURL = __webpack_exports__.vb;
 var __webpack_exports__renderSvg = __webpack_exports__.lW;
 var __webpack_exports__replaceMarkedSection = __webpack_exports__.S3;
 var __webpack_exports__toOrdinal = __webpack_exports__.ZO;
-export { __webpack_exports__buildReadmeSnippet as buildReadmeSnippet, __webpack_exports__extractStats as extractStats, __webpack_exports__genBadgeURL as genBadgeURL, __webpack_exports__renderSvg as renderSvg, __webpack_exports__replaceMarkedSection as replaceMarkedSection, __webpack_exports__toOrdinal as toOrdinal };
+export { __webpack_exports__buildReadmeSnippet as buildReadmeSnippet, __webpack_exports__collectCommitPaths as collectCommitPaths, __webpack_exports__extractStats as extractStats, __webpack_exports__genBadgeURL as genBadgeURL, __webpack_exports__renderSvg as renderSvg, __webpack_exports__replaceMarkedSection as replaceMarkedSection, __webpack_exports__toOrdinal as toOrdinal };
 
 //# sourceMappingURL=index.js.map

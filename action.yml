@@ -32,6 +32,22 @@ inputs:
     required: false
     default: "rust"
     description: "Card theme: rust, light, or slate"
+  commit-changes:
+    required: false
+    default: "false"
+    description: "Whether to commit files written by this action"
+  commit-message:
+    required: false
+    default: "Update Rust Thanks card"
+    description: "Commit message used when commit-changes is true"
+  git-user-name:
+    required: false
+    default: "github-actions[bot]"
+    description: "Git author name used when commit-changes is true"
+  git-user-email:
+    required: false
+    default: "41898282+github-actions[bot]@users.noreply.github.com"
+    description: "Git author email used when commit-changes is true"
   write-readme:
     required: false
     default: "false"
@@ -55,6 +71,10 @@ outputs:
     description: "Contribution count from Rust Thanks"
   badge-url:
     description: "Generated shields.io badge URL"
+  committed:
+    description: "Whether this action created a commit"
+  commit-sha:
+    description: "Commit SHA when commit-changes created a commit"
   svg:
     description: "Generated SVG markup when format includes svg"
   svg-path:

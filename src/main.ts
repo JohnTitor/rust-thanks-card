@@ -1,12 +1,19 @@
 import { Buffer } from "node:buffer";
+import { execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { promisify } from "node:util";
 import * as core from "@actions/core";
 
 const DEFAULT_OUTPUT_PATH = "rust-thanks-card.svg";
 const THANKS_URL =
 	"https://raw.githubusercontent.com/rust-lang/thanks/gh-pages/rust/all-time/index.html";
+const DEFAULT_COMMIT_MESSAGE = "Update Rust Thanks card";
+const DEFAULT_GIT_USER_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com";
+const DEFAULT_GIT_USER_NAME = "github-actions[bot]";
+
+const execFileAsync = promisify(execFile);
 
 const THEMES = {
 	light: {
@@ -52,7 +59,11 @@ type Format = "badge" | "both" | "svg";
 
 type ActionConfig = {
 	avatarUrl: string;
+	commitChanges: boolean;
+	commitMessage: string;
 	format: Format;
+	gitUserEmail: string;
+	gitUserName: string;
 	name: string;
 	outputPath: string;
 	readmeMarker: string;
@@ -80,6 +91,9 @@ type RenderContext = {
 
 type ActionResult = {
 	badgeUrl: string;
+	commitSha?: string;
+	committed?: boolean;
+	readmePath?: string;
 	readmeSnippet?: string;
 	svg?: string;
 	svgPath?: string;
@@ -108,9 +122,11 @@ async function run(): Promise<void> {
 
 		if (config.writeReadme) {
 			const readmeSnippet = await updateReadme(config, result);
+			result.readmePath = resolveWorkspacePath(config.readmePath);
 			result.readmeSnippet = readmeSnippet;
 		}
 
+		await maybeCommitChanges(config, result);
 		setOutputs(stats, result);
 		await writeSummary(stats, result);
 	} catch (error) {
@@ -144,7 +160,11 @@ function readConfig(): ActionConfig {
 
 	return {
 		avatarUrl: core.getInput("avatar-url").trim(),
+		commitChanges: core.getBooleanInput("commit-changes"),
+		commitMessage: core.getInput("commit-message").trim() || DEFAULT_COMMIT_MESSAGE,
 		format: formatInput,
+		gitUserEmail: core.getInput("git-user-email").trim() || DEFAULT_GIT_USER_EMAIL,
+		gitUserName: core.getInput("git-user-name").trim() || DEFAULT_GIT_USER_NAME,
 		name,
 		outputPath,
 		readmeMarker: core.getInput("readme-marker").trim(),
@@ -401,12 +421,86 @@ function resolveWorkspacePath(inputPath: string): string {
 	return resolve(process.env.GITHUB_WORKSPACE || process.cwd(), inputPath);
 }
 
+export function collectCommitPaths(
+	result: Pick<ActionResult, "readmePath" | "svgPath">,
+	workspaceRoot: string,
+): string[] {
+	const commitPaths = new Set<string>();
+	for (const path of [result.svgPath, result.readmePath]) {
+		if (!path) {
+			continue;
+		}
+
+		const relativePath = relative(workspaceRoot, path);
+		if (relativePath === "" || relativePath.startsWith("..") || isAbsolute(relativePath)) {
+			throw new Error(
+				`Cannot commit ${path} because it is outside the workspace root ${workspaceRoot}.`,
+			);
+		}
+
+		commitPaths.add(relativePath.replaceAll("\\", "/"));
+	}
+
+	return [...commitPaths];
+}
+
+async function maybeCommitChanges(
+	config: Pick<ActionConfig, "commitChanges" | "commitMessage" | "gitUserEmail" | "gitUserName">,
+	result: ActionResult,
+): Promise<void> {
+	if (!config.commitChanges) {
+		return;
+	}
+
+	const workspaceRoot = process.env.GITHUB_WORKSPACE || process.cwd();
+	const commitPaths = collectCommitPaths(result, workspaceRoot);
+	if (commitPaths.length === 0) {
+		core.info("Skipping commit because the action did not write any local files.");
+		result.committed = false;
+		return;
+	}
+
+	await execFileAsync("git", ["config", "user.name", config.gitUserName], {
+		cwd: workspaceRoot,
+	});
+	await execFileAsync("git", ["config", "user.email", config.gitUserEmail], {
+		cwd: workspaceRoot,
+	});
+	await execFileAsync("git", ["add", "--", ...commitPaths], {
+		cwd: workspaceRoot,
+	});
+
+	const { stdout } = await execFileAsync(
+		"git",
+		["diff", "--cached", "--name-only", "--", ...commitPaths],
+		{
+			cwd: workspaceRoot,
+		},
+	);
+	if (stdout.trim() === "") {
+		core.info("Skipping commit because there are no staged changes.");
+		result.committed = false;
+		return;
+	}
+
+	await execFileAsync("git", ["commit", "-m", config.commitMessage], {
+		cwd: workspaceRoot,
+	});
+	const commitResult = await execFileAsync("git", ["rev-parse", "HEAD"], {
+		cwd: workspaceRoot,
+	});
+	result.commitSha = commitResult.stdout.trim();
+	result.committed = true;
+	core.info(`Committed generated files at ${result.commitSha}`);
+}
+
 function setOutputs(stats: RustThanksStats, result: ActionResult): void {
 	core.setOutput("name", stats.name);
 	core.setOutput("rank", String(stats.rank));
 	core.setOutput("ordinal-rank", stats.ordinalRank);
 	core.setOutput("contributions", String(stats.contributions));
 	core.setOutput("badge-url", result.badgeUrl);
+	core.setOutput("committed", result.committed ? "true" : "false");
 
 	if (result.svg) {
 		core.setOutput("svg", result.svg);
@@ -416,6 +510,9 @@ function setOutputs(stats: RustThanksStats, result: ActionResult): void {
 	}
 	if (result.readmeSnippet) {
 		core.setOutput("readme-snippet", result.readmeSnippet);
+	}
+	if (result.commitSha) {
+		core.setOutput("commit-sha", result.commitSha);
 	}
 }
 
@@ -442,6 +539,9 @@ async function writeSummary(stats: RustThanksStats, result: ActionResult): Promi
 	}
 	if (result.readmeSnippet) {
 		core.summary.addCodeBlock(result.readmeSnippet, "md");
+	}
+	if (result.committed && result.commitSha) {
+		core.summary.addRaw(`Commit SHA: ${result.commitSha}`, true);
 	}
 
 	await core.summary.write();
