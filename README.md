@@ -1,8 +1,15 @@
 # Rust Thanks Card
 
-Generate a card/badge from [Rust Thanks](https://thanks.rust-lang.org/).
+Generate a badge URL or a standalone SVG card from [Rust Thanks](https://thanks.rust-lang.org/).
 
-## Workflow config
+## Features
+
+- Self-contained SVG generation inside the action
+- `node24` runtime
+- Action outputs for rank, contributions, badge URL, SVG markup, and SVG path
+- Optional local README marker replacement
+
+## Generate an SVG
 
 ```yaml
 name: Rust Thanks Card
@@ -12,25 +19,82 @@ on:
 
 jobs:
   update-card:
-    name: Rust Thanks Card
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: JohnTitor/rust-thanks-card@main
+      - uses: actions/checkout@v5
+
+      - id: rust-thanks
+        uses: JohnTitor/rust-thanks-card@main
         with:
-          name: 'Yuki Okushi' # A name on Thanks
-          image_url: 'https://avatars.githubusercontent.com/u/25030997?v=4' # An image URL to be used in a SVG
-          type: 'badge' # badge or svg
+          name: "Yuki Okushi"
+          format: "svg"
+          output-path: "assets/rust-thanks-card.svg"
+          avatar-url: "https://avatars.githubusercontent.com/u/25030997?v=4"
+          theme: "rust"
 ```
 
-## Examples
+## Update a README marker block
 
-### SVG
+Add this marker block to your README first:
 
-<img src="https://cardivo-woad.vercel.app/api?name=Rust%20Contribution%20Stats%0A&description=Contributions%F0%9F%93%9D:%201441%20%20%20%20Rank%F0%9F%8F%86:%2033&image=https://avatars.githubusercontent.com/u/25030997?v=4&backgroundColor=%23ecf0f1&disableAnimation=true" width="400">
+```md
+<!--START_SECTION:rust-thanks-card-->
+<!--END_SECTION:rust-thanks-card-->
+```
 
-### Badge
+Then run the action with `write-readme: true`:
 
-<img src="https://img.shields.io/badge/Rust%20Contributions-1441%20contibutions,%2033rd-orange?logo=rust" width="400">
+```yaml
+name: Rust Thanks Card
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-card:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: JohnTitor/rust-thanks-card@main
+        with:
+          name: "Yuki Okushi"
+          format: "svg"
+          output-path: "assets/rust-thanks-card.svg"
+          write-readme: "true"
+
+      - uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: "Update Rust Thanks card"
+```
+
+## Inputs
+
+| Name            | Required | Default                | Description                                             |
+| --------------- | -------- | ---------------------- | ------------------------------------------------------- |
+| `name`          | yes      |                        | A name listed in Rust Thanks                            |
+| `format`        | no       | `svg`                  | `svg`, `badge`, or `both`                               |
+| `output-path`   | no       | `rust-thanks-card.svg` | SVG output path when `format` includes `svg`            |
+| `avatar-url`    | no       | empty                  | Avatar image URL embedded into the SVG                  |
+| `title`         | no       | `Rust Thanks`          | SVG headline                                            |
+| `subtitle`      | no       | `Contributor stats`    | SVG subheading                                          |
+| `theme`         | no       | `rust`                 | `rust`, `light`, or `slate`                             |
+| `write-readme`  | no       | `false`                | Replace a local README marker block                     |
+| `readme-path`   | no       | `README.md`            | README path to update                                   |
+| `readme-marker` | no       | `rust-thanks-card`     | Marker suffix used in `START_SECTION` and `END_SECTION` |
+
+## Outputs
+
+| Name             | Description                              |
+| ---------------- | ---------------------------------------- |
+| `name`           | Matched name from Rust Thanks            |
+| `rank`           | Numeric rank                             |
+| `ordinal-rank`   | Ordinal rank such as `1st`               |
+| `contributions`  | Contribution count                       |
+| `badge-url`      | Generated shields.io badge URL           |
+| `svg`            | Generated SVG markup                     |
+| `svg-path`       | Absolute path to the generated SVG file  |
+| `readme-snippet` | Snippet written into README when enabled |
 
 ## License
 

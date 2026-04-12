@@ -1,41 +1,107 @@
 import { expect, test } from "vitest";
-import { extractData, genBadgeURL, genSVGURL } from "../src/main";
+import {
+	buildReadmeSnippet,
+	extractStats,
+	genBadgeURL,
+	renderSvg,
+	replaceMarkedSection,
+	toOrdinal,
+} from "../src/main";
 
-test("extract data from HTML", () => {
+test("extract stats from Rust Thanks HTML", () => {
 	const testHTML = `
   <table>
     <tbody>
       <tr>
-        <td>1</td>
+        <td class="bn">11</td>
+        <td class="bn">bors</td>
+        <td class="bn">53863</td>
+      </tr>
+      <tr>
+        <td>12</td>
         <td class="bn"><a href="https://github.com/bors" rel="nofollow">bors</a></td>
         <td class="bc">53863</td>
       </tr>
     </tbody>
   </table>
   `;
-	const data = extractData(testHTML, "bors");
-	console.log(data);
-	expect(data.get("name")).toBe("bors");
-	expect(data.get("rank")).toBe("1");
-	expect(data.get("contributions")).toBe("53863");
+
+	expect(extractStats(testHTML, "bors")).toEqual({
+		contributions: 53863,
+		name: "bors",
+		ordinalRank: "11th",
+		rank: 11,
+	});
 });
 
-test("generate badge URL", () => {
-	const url = genBadgeURL("1", "40782");
-	console.log(url);
-	expect(url).toBe(
-		"https://img.shields.io/badge/Rust%20Contributions-40782%20contibutions,%201st-orange?logo=rust",
+test("format ordinal ranks correctly", () => {
+	expect(toOrdinal(1)).toBe("1st");
+	expect(toOrdinal(2)).toBe("2nd");
+	expect(toOrdinal(3)).toBe("3rd");
+	expect(toOrdinal(11)).toBe("11th");
+	expect(toOrdinal(12)).toBe("12th");
+	expect(toOrdinal(13)).toBe("13th");
+	expect(toOrdinal(21)).toBe("21st");
+});
+
+test("generate a badge URL", () => {
+	expect(
+		genBadgeURL(
+			{
+				contributions: 40782,
+				ordinalRank: "1st",
+			},
+			"rust",
+		),
+	).toBe(
+		"https://img.shields.io/badge/Rust%20Thanks-40%2C782%20contributions%2C%201st-orange?logo=rust",
 	);
 });
 
-test("extract SVG URL", () => {
-	const url = genSVGURL(
-		"1",
-		"40782",
-		"https://avatars.githubusercontent.com/u/3372342?v=4",
-	);
-	console.log(url);
-	expect(url).toBe(
-		"https://cardivo-woad.vercel.app/api?name=Rust%20Contribution%20Stats%0A&description=Contributions%F0%9F%93%9D:%2040782%20Rank%F0%9F%8F%86:%201st&image=https://avatars.githubusercontent.com/u/3372342?v=4&backgroundColor=%23ecf0f1&disableAnimation=true",
-	);
+test("render a standalone SVG", () => {
+	const svg = renderSvg({
+		avatarDataUrl: "data:image/png;base64,Zm9v",
+		stats: {
+			contributions: 40782,
+			name: "Jane Doe",
+			ordinalRank: "1st",
+			rank: 1,
+		},
+		subtitle: "Contributor stats",
+		theme: "rust",
+		title: "Rust Thanks",
+	});
+
+	expect(svg).toContain("<svg");
+	expect(svg).toContain("Jane Doe");
+	expect(svg).toContain("40,782");
+	expect(svg).toContain("data:image/png;base64,Zm9v");
+});
+
+test("build a README snippet for a generated svg", () => {
+	expect(
+		buildReadmeSnippet(
+			{ format: "svg" },
+			{
+				badgeUrl:
+					"https://img.shields.io/badge/Rust%20Thanks-40%2C782%20contributions%2C%201st-orange?logo=rust",
+				svgPath: "/tmp/out/cards/rust-thanks.svg",
+			},
+			"/tmp/out/README.md",
+		),
+	).toBe("![Rust Thanks card](./cards/rust-thanks.svg)");
+});
+
+test("replace README marker block", () => {
+	const content = `
+# README
+
+<!--START_SECTION:rust-thanks-card-->
+old
+<!--END_SECTION:rust-thanks-card-->
+`;
+
+	expect(
+		replaceMarkedSection(content, "rust-thanks-card", "![Rust Thanks card](./rust-thanks.svg)"),
+	).toContain("![Rust Thanks card](./rust-thanks.svg)");
 });
