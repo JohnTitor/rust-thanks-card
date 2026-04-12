@@ -31007,14 +31007,9 @@ function readConfig() {
         throw new Error("The name input must not be empty.");
     }
     const outputPath = getInput("output-path").trim();
-    const commitChanges = getBooleanInput("commit-changes");
     const pushChanges = getBooleanInput("push-changes");
-    if (pushChanges && !commitChanges) {
-        throw new Error("push-changes requires commit-changes to be enabled.");
-    }
     return {
         avatarUrl: getInput("avatar-url").trim(),
-        commitChanges,
         commitMessage: getInput("commit-message").trim() || DEFAULT_COMMIT_MESSAGE,
         format: formatInput,
         gitUserEmail: getInput("git-user-email").trim() || DEFAULT_GIT_USER_EMAIL,
@@ -31241,7 +31236,7 @@ function collectCommitPaths(result, workspaceRoot) {
     return [...commitPaths];
 }
 async function maybeCommitChanges(config, result) {
-    if (!config.commitChanges) {
+    if (!config.pushChanges) {
         return;
     }
     const workspaceRoot = process.env.GITHUB_WORKSPACE || process.cwd();
